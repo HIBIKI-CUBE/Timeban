@@ -5,14 +5,14 @@
   export let data: PageData;
   let { board } = data;
 
-  export const DndConsider = (e: CustomEvent<DndEvent<Item>>, lane_id: bigint): void => {
-    const domLaneIndex = Number(lane_id - 1n);
+  export const DndConsider = (e: CustomEvent<DndEvent<Item>>, lane: bigint): void => {
+    const domLaneIndex = Number(lane - 1n);
     if (board?.Lanes[domLaneIndex]?.Items) {
       board.Lanes[domLaneIndex].Items = e.detail.items;
     }
   };
-  export const DndFinalize = async (e: CustomEvent<DndEvent<Item>>, lane_id: bigint) => {
-    const domLaneIndex = Number(lane_id - 1n);
+  export const DndFinalize = async (e: CustomEvent<DndEvent<Item>>, lane: bigint) => {
+    const domLaneIndex = Number(lane - 1n);
     if (board?.Lanes[domLaneIndex]?.Items) {
       board.Lanes[domLaneIndex].Items = e.detail.items;
     }
@@ -22,7 +22,7 @@
           if (item.id !== e.detail.info.id) return;
           const data = new FormData();
           data.append('id', item.id);
-          data.append('lane_id', String(lane_id));
+          data.append('lane', String(lane));
           return fetch('?/updateItem', {
             method: 'POST',
             body: data,
@@ -36,7 +36,7 @@
 <h1>
   {board?.name}
 </h1>
-{#if board.Lanes}
+{#if board?.Lanes}
   <div class="lanes">
     {#each board?.Lanes as lane}
       <div class="lane">
@@ -63,7 +63,7 @@
         {/if}
         <form action="?/createItem" method="post">
           <input type="text" name="name" />
-          <input type="hidden" name="lane_id" value={lane.id} />
+          <input type="hidden" name="lane" value={lane.id} />
           <input type="submit" value="追加" />
         </form>
       </div>
