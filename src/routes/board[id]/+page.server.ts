@@ -29,6 +29,9 @@ async function readBoard(id: number, owner: string) {
               include: {
                 Logs: true,
               },
+              orderBy: {
+                row: 'asc',
+              },
             },
           },
         },
@@ -51,15 +54,45 @@ export const actions = {
   },
   updateItem: async ({ request, params }) => {
     const data = await request.formData();
-    const id = Number(data.get('id'));
+    const itemId = Number(data.get('id'));
     const lane = Number(data.get('lane'));
+    const row = Number(data.get('row'));
+    const timerControl = String(data.get('timerControl'));
     await prisma.items.update({
       where: {
-        id,
+        id: itemId,
       },
       data: {
         lane,
+        row,
       },
     });
+    if (timerControl === 'start') {
+      await prisma.logs.create({
+        data: {
+          item: itemId,
+        },
+      });
+    }
+    if (timerControl === 'stop') {
+      const target = await prisma.logs.findFirst({
+        where: {
+          item: itemId,
+          started_at: null,
+        },
+        orderBy: {
+          id: 'asc',
+        },
+      });
+      if (!target?.id) return;
+      await prisma.logs.update({
+        where: {
+          id: Number(target.id),
+        },
+        data: {
+          stopped_at: new Date().toISOString(),
+        }
+      });
+    }
   },
 } satisfies Actions;
