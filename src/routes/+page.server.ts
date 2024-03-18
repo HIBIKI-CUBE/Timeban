@@ -24,6 +24,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 export const actions = {
   createBoard: async ({ request , locals }) => {
     const owner = (await locals.getSession())?.user.id;
+    if(!owner) return;
     const data = await request.formData();
     const name = String(data.get('name'));
     await prisma.boards.create({

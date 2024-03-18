@@ -41,7 +41,9 @@ async function readBoard(id: number, owner: string) {
 }
 
 export const actions = {
-  createItem: async ({ request }) => {
+  createItem: async ({ request, locals }) => {
+    const owner = (await locals.getSession())?.user.id;
+    if (!owner) return;
     const data = await request.formData();
     const name = String(data.get('name'));
     const lane = Number(data.get('lane'));
@@ -52,7 +54,9 @@ export const actions = {
       },
     });
   },
-  updateItem: async ({ request, params }) => {
+  updateItem: async ({ request, locals }) => {
+    const owner = (await locals.getSession())?.user.id;
+    if (!owner) return;
     const data = await request.formData();
     const itemId = Number(data.get('id'));
     const lane = Number(data.get('lane'));
