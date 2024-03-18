@@ -1,5 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import Card from '$lib/components/card.svelte';
+  import { onMount } from 'svelte';
   import type { PageData } from './$types';
   import { dndzone, type DndEvent, type Item } from 'svelte-dnd-action';
   interface timer {
@@ -12,6 +14,7 @@
   export let data: PageData;
   let { board } = data;
   let timers: timer[] = [];
+  let cards: Card[][] = Array(board?.Lanes.length).fill([]);
 
   function findTimer(id: number): number | undefined {
     const index = timers.findIndex(item => item.id === id);
@@ -63,6 +66,9 @@
           data.append('lane', String(laneId));
           data.append('row', String(i));
           if (item.id === e.detail.info.id) {
+            console.log(cards);
+            // console.log(cards.flatMap(card => card.item.id));
+            console.log(cards.flat().find(card => card.item.id == e.detail.info.id));
             if (board?.Lanes[targetLaneIndex].runsTimer) {
               const timerIndex = findTimer(Number(item.id));
               if (timerIndex === undefined) {
@@ -95,9 +101,10 @@
               timers[targetIndex].offset =
                 timers[targetIndex].stoppedAt! - timers[targetIndex].startedAt;
               timers = timers;
-              console.log('stop', item.name, timers);
+              data.append('timerControl', 'stop');
             }
           }
+
           return fetch('?/updateItem', {
             method: 'POST',
             body: data,
@@ -114,7 +121,7 @@
 <a href="/">ボード一覧に戻る</a>
 {#if board?.Lanes}
   <div class="lanes">
-    {#each board?.Lanes as lane}
+    {#each board?.Lanes as lane, i}
       <div class="lane">
         <h2>
           {lane.name}
@@ -130,14 +137,15 @@
               DndFinalize(e, lane.id);
             }}
           >
-            {#each lane.Items as item (item.id)}
-              {@const timerIndex = findTimer(Number(item.id))}
-              <div>
+            {#each lane.Items as item, j (item.id)}
+              <!-- {@const timerIndex = findTimer(Number(item.id))} -->
+              <Card {item} bind:this={cards[j][i]} />
+              <!-- <div>
                 {item.name}
                 {#if timerIndex !== undefined && timers[timerIndex]}
                   {timers[timerIndex].display}
                 {/if}
-              </div>
+              </div> -->
             {/each}
           </div>
         {/if}

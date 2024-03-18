@@ -65,7 +65,7 @@ export const actions = {
       data: {
         name,
         board,
-        runsTimer
+        runsTimer,
       },
     });
   },
@@ -94,22 +94,23 @@ export const actions = {
       });
     }
     if (timerControl === 'stop') {
+      console.log(itemId);
       const target = await prisma.logs.findFirst({
         where: {
           item: itemId,
-          started_at: null,
         },
         orderBy: {
-          id: 'asc',
+          id: 'desc',
         },
       });
-      if (!target?.id) return;
+      console.log(target);
+      if (!target?.id || target.stopped_at !== undefined) return;
       await prisma.logs.update({
         where: {
           id: Number(target.id),
         },
         data: {
-          stopped_at: new Date().toISOString(),
+          stopped_at: new Date(),
         },
       });
     }
