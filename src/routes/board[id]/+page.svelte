@@ -35,17 +35,24 @@
     });
   }
 
-  export const DndConsider = (e: CustomEvent<DndEvent<Item>>, lane: bigint): void => {
-    const domLaneIndex = Number(lane - 1n);
-    if (board?.Lanes[domLaneIndex]?.Items) {
-      board.Lanes[domLaneIndex].Items = e.detail.items;
+  export const DndConsider = (e: CustomEvent<DndEvent<Item>>, laneId: bigint): void => {
+    const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
+    if (
+      !(targetLaneIndex === -1 || targetLaneIndex === undefined) &&
+      board?.Lanes[targetLaneIndex]?.Items
+    ) {
+      board.Lanes[targetLaneIndex].Items = e.detail.items;
     }
   };
-  export const DndFinalize = async (e: CustomEvent<DndEvent<Item>>, lane: bigint) => {
-    const domLaneIndex = Number(lane - 1n);
-    if (board?.Lanes[domLaneIndex]?.Items) {
-      board.Lanes[domLaneIndex].Items = e.detail.items;
-    }
+  export const DndFinalize = async (e: CustomEvent<DndEvent<Item>>, laneId: bigint) => {
+    const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
+    if (
+      targetLaneIndex === -1 ||
+      targetLaneIndex === undefined ||
+      !board?.Lanes[targetLaneIndex]?.Items
+    )
+      return;
+    board.Lanes[targetLaneIndex].Items = e.detail.items;
     if (e.detail.info.trigger === 'droppedIntoZone') {
       await Promise.all(
         e.detail.items.map((item, i) => {
@@ -53,12 +60,12 @@
           if (item.row === BigInt(i) && item.id !== e.detail.info.id) return;
           const data = new FormData();
           data.append('id', idStr);
-          data.append('lane', String(lane));
+          data.append('lane', String(laneId));
           data.append('row', String(i));
           if (item.id === e.detail.info.id) {
-            if (board?.Lanes[domLaneIndex].runsTimer) {
+            if (board?.Lanes[targetLaneIndex].runsTimer) {
               const timerIndex = findTimer(Number(item.id));
-              if(timerIndex === undefined){
+              if (timerIndex === undefined) {
                 timers.push({
                   id: Number(item.id),
                   startedAt: new Date().getTime(),
@@ -66,7 +73,7 @@
                   offset: 0,
                   display: '00:00:00',
                 });
-              }else{
+              } else {
                 timers[timerIndex].startedAt = new Date().getTime();
                 timers[timerIndex].stoppedAt = undefined;
               }
@@ -78,9 +85,15 @@
               data.append('timerControl', 'start');
             } else {
               const targetIndex = findTimer(Number(item.id));
-              if (targetIndex === undefined || !timers[targetIndex] || timers[targetIndex]?.startedAt === undefined) return;
+              if (
+                targetIndex === undefined ||
+                !timers[targetIndex] ||
+                timers[targetIndex]?.startedAt === undefined
+              )
+                return;
               timers[targetIndex].stoppedAt = new Date().getTime();
-              timers[targetIndex].offset = timers[targetIndex].stoppedAt! - timers[targetIndex].startedAt;
+              timers[targetIndex].offset =
+                timers[targetIndex].stoppedAt! - timers[targetIndex].startedAt;
               timers = timers;
               console.log('stop', item.name, timers);
             }
@@ -98,6 +111,7 @@
 <h1>
   {board?.name}
 </h1>
+<a href="/">ボード一覧に戻る</a>
 {#if board?.Lanes}
   <div class="lanes">
     {#each board?.Lanes as lane}
@@ -117,10 +131,11 @@
             }}
           >
             {#each lane.Items as item (item.id)}
+              {@const timerIndex = findTimer(Number(item.id))}
               <div>
                 {item.name}
-                {#if findTimer(Number(item.id)) !== undefined && timers[findTimer(Number(item.id))]}
-                  {timers[findTimer(Number(item.id))].display}
+                {#if timerIndex !== undefined && timers[timerIndex]}
+                  {timers[timerIndex].display}
                 {/if}
               </div>
             {/each}
@@ -135,6 +150,15 @@
     {/each}
   </div>
 {/if}
+
+<form action="?/createLane" method="post" use:enhance>
+  <label for="name">レーンを作成</label>
+  <input type="text" name="name" required />
+  <input type="checkbox" name="runsTimer" id="runsTimer" />
+  <label for="runsTimer">タイマーを作動させるレーン</label>
+  <input type="hidden" name="board" value={board?.id} />
+  <input type="submit" value="作成" />
+</form>
 
 <style>
   .lanes {

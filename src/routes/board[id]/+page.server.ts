@@ -54,6 +54,21 @@ export const actions = {
       },
     });
   },
+  createLane: async ({ request, locals }) => {
+    const owner = (await locals.getSession())?.user.id;
+    if (!owner) return;
+    const data = await request.formData();
+    const name = String(data.get('name'));
+    const board = Number(data.get('board'));
+    const runsTimer = Boolean(data.get('runsTimer'));
+    await prisma.lanes.create({
+      data: {
+        name,
+        board,
+        runsTimer
+      },
+    });
+  },
   updateItem: async ({ request, locals }) => {
     const owner = (await locals.getSession())?.user.id;
     if (!owner) return;
@@ -95,7 +110,7 @@ export const actions = {
         },
         data: {
           stopped_at: new Date().toISOString(),
-        }
+        },
       });
     }
   },
