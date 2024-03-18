@@ -1,7 +1,7 @@
 <script lang="ts">
+  import { enhance } from '$app/forms';
   import type { PageData } from './$types';
   import { dndzone, type DndEvent, type Item } from 'svelte-dnd-action';
-
   interface timer {
     id: number;
     startedAt: number;
@@ -126,7 +126,7 @@
             {/each}
           </div>
         {/if}
-        <form action="?/createItem" method="post">
+        <form action="?/createItem" method="post" use:enhance>
           <input type="text" name="name" required />
           <input type="hidden" name="lane" value={lane.id} />
           <input type="submit" value="追加" />

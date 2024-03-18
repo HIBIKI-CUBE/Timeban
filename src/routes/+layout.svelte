@@ -1,7 +1,7 @@
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
   import AuthController from '$lib/authController.svelte';
-  import {  onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import type { PageData } from '../routes/$types';
   import { invalidate } from '$app/navigation';
 

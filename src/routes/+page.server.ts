@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
     return {
       boards: await prisma.boards.findMany({
         where: {
-          owner: (await parent()).session?.user.id,
+          owner,
         },
       }),
     };
@@ -19,4 +19,18 @@ export const load: PageServerLoad = async ({ params, parent }) => {
       error(404, `Not found: ${err.message}`);
     }
   }
+};
+
+export const actions = {
+  createBoard: async ({ request , locals }) => {
+    const owner = (await locals.getSession())?.user.id;
+    const data = await request.formData();
+    const name = String(data.get('name'));
+    await prisma.boards.create({
+      data: {
+        name,
+        owner
+      },
+    });
+  },
 };
