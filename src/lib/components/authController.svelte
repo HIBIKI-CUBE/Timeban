@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import type { PageData } from '../routes/$types';
+  import type { PageData } from '../../routes/$types';
 
   export let data: PageData;
   let { supabase, session } = data;
