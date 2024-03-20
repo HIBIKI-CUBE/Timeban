@@ -1,0 +1,9 @@
+<svg style="stroke-linecap:round;stroke-linejoin:round;" viewBox="0 0 100 78" width="100%"
+  xmlns="http://www.w3.org/2000/svg">
+  <mask id="layer">
+    <rect x="0" y="0" width="100" height="78" fill="white" />
+    <path d="M26 5L98 5L76 47L4 47Z" fill="#000" stroke="#000" stroke-width="6" />
+  </mask>
+  <path d="M25 33L97 33L75 75L3 75Z" fill="#666" stroke="#fd0" stroke-width="6" mask="url(#layer)"/>
+  <path d="M25 3L97 3L75 45L3 45Z" fill="#666" stroke="#fd0" stroke-width="6"/>
+</svg>

@@ -23,5 +23,11 @@
   });
 </script>
 
-<AuthController {data}/>
+<AuthController {data} />
 <slot />
+
+<style>
+  :global(body) {
+    margin: 0;
+  }
+</style>
