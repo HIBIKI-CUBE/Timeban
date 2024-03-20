@@ -27,7 +27,11 @@ async function readBoard(id: number, owner: string) {
           include: {
             Items: {
               include: {
-                Logs: true,
+                Logs: {
+                  orderBy: {
+                    created_at: 'asc',
+                  }
+                },
               },
               orderBy: {
                 row: 'asc',
@@ -94,7 +98,6 @@ export const actions = {
       });
     }
     if (timerControl === 'stop') {
-      console.log(itemId);
       const target = await prisma.logs.findFirst({
         where: {
           item: itemId,
@@ -103,8 +106,7 @@ export const actions = {
           id: 'desc',
         },
       });
-      console.log(target);
-      if (!target?.id || target.stopped_at !== undefined) return;
+      if (!target?.id || target.stopped_at !== null) return;
       await prisma.logs.update({
         where: {
           id: Number(target.id),

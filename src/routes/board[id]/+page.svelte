@@ -1,107 +1,51 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import Card from '$lib/components/card.svelte';
-  import { onMount } from 'svelte';
   import type { PageData } from './$types';
   import { dndzone, type DndEvent, type Item } from 'svelte-dnd-action';
-  interface timer {
-    id: number;
-    startedAt: number;
-    stoppedAt: number | undefined;
-    display: string | undefined;
-    offset: number;
-  }
+  import { timers } from '$lib/timers';
+
   export let data: PageData;
   let { board } = data;
-  let timers: timer[] = [];
-  let cards: Card[][] = Array(board?.Lanes.length).fill([]);
-
-  function findTimer(id: number): number | undefined {
-    const index = timers.findIndex(item => item.id === id);
-    return index === -1 ? undefined : index;
-  }
-
-  function updateTimer(id: number) {
-    const targetIndex = findTimer(id);
-    if (
-      targetIndex === undefined ||
-      !timers[targetIndex] ||
-      timers[targetIndex].stoppedAt !== undefined
-    )
-      return;
-    const diff = new Date().getTime() - timers[targetIndex].startedAt + timers[targetIndex].offset;
-    timers[targetIndex].display = new Date(diff).toUTCString().match(/..:..:../)?.[0] ?? '';
-    timers = timers;
-
-    requestAnimationFrame(() => {
-      updateTimer(id);
-    });
-  }
+  $: ({ board } = data);
 
   export const DndConsider = (e: CustomEvent<DndEvent<Item>>, laneId: bigint): void => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
     if (
-      !(targetLaneIndex === -1 || targetLaneIndex === undefined) &&
-      board?.Lanes[targetLaneIndex]?.Items
-    ) {
-      board.Lanes[targetLaneIndex].Items = e.detail.items;
-    }
+      targetLaneIndex === undefined ||
+      targetLaneIndex === -1 ||
+      !board?.Lanes[targetLaneIndex].Items
+    )
+      return;
+    board.Lanes[targetLaneIndex].Items = e.detail.items;
   };
   export const DndFinalize = async (e: CustomEvent<DndEvent<Item>>, laneId: bigint) => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
-    if (
-      targetLaneIndex === -1 ||
-      targetLaneIndex === undefined ||
-      !board?.Lanes[targetLaneIndex]?.Items
-    )
-      return;
+    if (targetLaneIndex === undefined || targetLaneIndex === -1 || !board) return;
     board.Lanes[targetLaneIndex].Items = e.detail.items;
     if (e.detail.info.trigger === 'droppedIntoZone') {
       await Promise.all(
         e.detail.items.map((item, i) => {
-          const idStr = String(item.id);
-          if (item.row === BigInt(i) && item.id !== e.detail.info.id) return;
+          if (item.row === BigInt(i) && item.id !== e.detail.info.id) return; //When the item is not moved
           const data = new FormData();
-          data.append('id', idStr);
+          data.append('id', String(item.id));
           data.append('lane', String(laneId));
           data.append('row', String(i));
-          if (item.id === e.detail.info.id) {
-            console.log(cards);
-            // console.log(cards.flatMap(card => card.item.id));
-            console.log(cards.flat().find(card => card.item.id == e.detail.info.id));
-            if (board?.Lanes[targetLaneIndex].runsTimer) {
-              const timerIndex = findTimer(Number(item.id));
-              if (timerIndex === undefined) {
-                timers.push({
-                  id: Number(item.id),
-                  startedAt: new Date().getTime(),
-                  stoppedAt: undefined,
-                  offset: 0,
-                  display: '00:00:00',
-                });
-              } else {
-                timers[timerIndex].startedAt = new Date().getTime();
-                timers[timerIndex].stoppedAt = undefined;
-              }
-              timers = timers;
-              console.log(timers);
-              requestAnimationFrame(() => {
-                updateTimer(Number(item.id));
-              });
-              data.append('timerControl', 'start');
-            } else {
-              const targetIndex = findTimer(Number(item.id));
-              if (
-                targetIndex === undefined ||
-                !timers[targetIndex] ||
-                timers[targetIndex]?.startedAt === undefined
-              )
-                return;
-              timers[targetIndex].stoppedAt = new Date().getTime();
-              timers[targetIndex].offset =
-                timers[targetIndex].stoppedAt! - timers[targetIndex].startedAt;
-              timers = timers;
-              data.append('timerControl', 'stop');
+          if (board?.Lanes[targetLaneIndex].runsTimer) {
+            data.append('timerControl', 'start');
+            if (!$timers[item.id]) {
+              $timers[item.id] = {
+                started_at: new Date(),
+                sessionOffset: 0,
+                duration: 0,
+              };
+            }
+            $timers[item.id].started_at = new Date();
+          } else {
+            data.append('timerControl', 'stop');
+            if ($timers[item.id]) {
+              $timers[item.id].sessionOffset += $timers[item.id].duration;
+              $timers[item.id].duration = 0;
             }
           }
 
@@ -121,7 +65,7 @@
 <a href="/">ボード一覧に戻る</a>
 {#if board?.Lanes}
   <div class="lanes">
-    {#each board?.Lanes as lane, i}
+    {#each board?.Lanes as lane}
       <div class="lane">
         <h2>
           {lane.name}
@@ -137,15 +81,8 @@
               DndFinalize(e, lane.id);
             }}
           >
-            {#each lane.Items as item, j (item.id)}
-              <!-- {@const timerIndex = findTimer(Number(item.id))} -->
-              <Card {item} bind:this={cards[j][i]} />
-              <!-- <div>
-                {item.name}
-                {#if timerIndex !== undefined && timers[timerIndex]}
-                  {timers[timerIndex].display}
-                {/if}
-              </div> -->
+            {#each lane.Items as item (item.id)}
+              <Card {item} isRunning={lane.runsTimer} />
             {/each}
           </div>
         {/if}
