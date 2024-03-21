@@ -43,7 +43,21 @@
   }
 </script>
 
-<div>
-  {item.name}
-  {formatted}
+<div class="card">
+  <div class="name">
+    {item.name}
+  </div>
+  <div class="timer">
+    {formatted}
+  </div>
 </div>
+
+<style lang="scss">
+  .card {
+    background-color: #fff7c2;
+    color: black;
+    padding: 1ch 0.5em 1ch;
+    border-radius: 1ch;
+    margin-bottom: 0.5em;
+  }
+</style>

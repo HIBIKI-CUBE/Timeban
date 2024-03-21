@@ -1,13 +1,17 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { flip } from 'svelte/animate';
   import Card from '$lib/components/card.svelte';
   import type { PageData } from './$types';
   import { dndzone, type DndEvent, type Item } from 'svelte-dnd-action';
   import { timers } from '$lib/timers';
+  import Lane from '$lib/components/lane.svelte';
 
   export let data: PageData;
   let { board } = data;
   $: ({ board } = data);
+
+  const flipDurationMs = 250;
 
   export const DndConsider = (e: CustomEvent<DndEvent<Item>>, laneId: bigint): void => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
@@ -59,21 +63,19 @@
   };
 </script>
 
-<h1>
-  {board?.name}
-</h1>
-<a href="/">ボード一覧に戻る</a>
-{#if board?.Lanes}
-  <div class="lanes">
-    {#each board?.Lanes as lane}
-      <div class="lane">
-        <h2>
-          {lane.name}
-        </h2>
-        {#if lane.Items}
+<div class="board">
+  <div class="header">
+    <h1>
+      {board?.name}
+    </h1>
+  </div>
+  {#if board?.Lanes}
+    <div class="lanes">
+      {#each board?.Lanes as lane}
+        <Lane {lane}>
           <div
             class="items"
-            use:dndzone={{ items: lane.Items, flipDurationMs: 100 }}
+            use:dndzone={{ items: lane.Items, flipDurationMs }}
             on:consider={e => {
               DndConsider(e, lane.id);
             }}
@@ -82,35 +84,42 @@
             }}
           >
             {#each lane.Items as item (item.id)}
-              <Card {item} isRunning={lane.runsTimer} />
+              <div animate:flip={{ duration: flipDurationMs }}>
+                <Card {item} isRunning={lane.runsTimer} />
+              </div>
             {/each}
           </div>
-        {/if}
-        <form action="?/createItem" method="post" use:enhance>
-          <input type="text" name="name" required />
-          <input type="hidden" name="lane" value={lane.id} />
-          <input type="submit" value="追加" />
-        </form>
-      </div>
-    {/each}
-  </div>
-{/if}
+        </Lane>
+      {/each}
+    </div>
+  {/if}
+</div>
 
 <form action="?/createLane" method="post" use:enhance>
   <label for="name">レーンを作成</label>
   <input type="text" name="name" required />
   <input type="checkbox" name="runsTimer" id="runsTimer" />
-  <label for="runsTimer">タイマーを作動させるレーン</label>
+  <label for="runsTimer">このレーンでタイマーを作動させる</label>
   <input type="hidden" name="board" value={board?.id} />
   <input type="submit" value="作成" />
 </form>
 
-<style>
+<style lang="scss">
+  :global(body:has(.lanes)) {
+    background-color: #ddd;
+  }
+  .board {
+    padding: 0 1em 0;
+  }
   .lanes {
     display: flex;
-    flex-wrap: wrap;
+    height: calc(100vh - 4em - 3.34em - 1em - 3em);
+    overflow-x: scroll;
   }
   .items {
-    padding: 0 0 1em;
+    padding: 0;
+    height: calc(100% - 3.16em - 0.5em - 0.5ch);
+    box-sizing: border-box;
+    overflow: scroll;
   }
 </style>

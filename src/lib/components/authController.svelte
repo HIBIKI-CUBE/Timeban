@@ -19,9 +19,12 @@
 </script>
 
 <header>
-  <img class="logo" src="logoTypeOpt.svg" alt="Board" />
+  <nav>
+    <img class="logo" src="logoTypeOpt.svg" alt="Board" />
+    <a href="/">ボード一覧</a>
+  </nav>
 
-  <div class="ui">
+  <div class="controls">
     <button class="gsi-material-button" on:click={session?.user ? handleSignOut : handleSignIn}>
       <div class="gsi-material-button-state"></div>
       <div class="gsi-material-button-content-wrapper">
@@ -65,7 +68,7 @@
   </div>
 </header>
 
-<style>
+<style lang="scss">
   header {
     background-color: #2b2b2b;
     width: 100%;
@@ -74,12 +77,25 @@
     justify-content: space-between;
   }
 
+  nav {
+    display: flex;
+    a {
+      display: flex;
+      align-items: center;
+      background-color: #3b3b3b;
+      text-decoration: none;
+      color: white;
+      padding: 0 2ch;
+      box-sizing: border-box;
+    }
+  }
+
   .logo {
     padding: 1em;
     box-sizing: border-box;
   }
 
-  .ui {
+  .controls {
     display: flex;
     align-items: center;
     box-sizing: border-box;
