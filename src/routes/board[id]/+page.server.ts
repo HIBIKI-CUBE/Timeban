@@ -3,8 +3,8 @@ import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { Prisma } from '@prisma/client';
 
-export const load: PageServerLoad = async ({ params, parent }) => {
-  const owner = (await parent()).session?.user.id;
+export const load: PageServerLoad = async ({ params, locals: { supabase } }) => {
+  const owner = (await supabase.auth.getUser()).data.user?.id;
   if (!owner) redirect(303, '/');
   try {
     return readBoard(Number(params.id), owner);
@@ -30,7 +30,7 @@ async function readBoard(id: number, owner: string) {
                 Logs: {
                   orderBy: {
                     created_at: 'asc',
-                  }
+                  },
                 },
               },
               orderBy: {
@@ -45,8 +45,8 @@ async function readBoard(id: number, owner: string) {
 }
 
 export const actions = {
-  createItem: async ({ request, locals }) => {
-    const owner = (await locals.getSession())?.user.id;
+  createItem: async ({ request, locals: { supabase } }) => {
+    const owner = (await supabase.auth.getUser()).data.user?.id;
     if (!owner) return;
     const data = await request.formData();
     const name = String(data.get('name'));
@@ -58,8 +58,8 @@ export const actions = {
       },
     });
   },
-  createLane: async ({ request, locals }) => {
-    const owner = (await locals.getSession())?.user.id;
+  createLane: async ({ request, locals: { supabase } }) => {
+    const owner = (await supabase.auth.getUser()).data.user?.id;
     if (!owner) return;
     const data = await request.formData();
     const name = String(data.get('name'));
@@ -73,8 +73,8 @@ export const actions = {
       },
     });
   },
-  updateItem: async ({ request, locals }) => {
-    const owner = (await locals.getSession())?.user.id;
+  updateItem: async ({ request, locals: { supabase } }) => {
+    const owner = (await supabase.auth.getUser()).data.user?.id;
     if (!owner) return;
     const data = await request.formData();
     const itemId = Number(data.get('id'));

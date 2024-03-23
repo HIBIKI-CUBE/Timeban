@@ -22,15 +22,15 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 };
 
 export const actions = {
-  createBoard: async ({ request , locals }) => {
-    const owner = (await locals.getSession())?.user.id;
-    if(!owner) return;
+  createBoard: async ({ request, locals: { supabase } }) => {
+    const owner = (await supabase.auth.getUser()).data.user?.id;
+    if (!owner) return;
     const data = await request.formData();
     const name = String(data.get('name'));
     await prisma.boards.create({
       data: {
         name,
-        owner
+        owner,
       },
     });
   },
