@@ -21,10 +21,6 @@
   }
 </script>
 
-<svelte:head>
-  <script src="https://accounts.google.com/gsi/client" async></script>
-</svelte:head>
-
 {#await ownerPromise then owner}
   {#if owner}
     {#if boards?.length}

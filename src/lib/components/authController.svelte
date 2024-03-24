@@ -59,6 +59,10 @@
   onMount(showGoogleOneTap);
 </script>
 
+<svelte:head>
+  <script src="https://accounts.google.com/gsi/client" async></script>
+</svelte:head>
+
 <header>
   <nav>
     <img class="logo" src="logoTypeOpt.svg" alt="Board" />
