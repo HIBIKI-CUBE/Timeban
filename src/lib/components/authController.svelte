@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { goto, invalidateAll } from '$app/navigation';
   import type { PageData } from '../../routes/$types';
 
   export let data: PageData;
@@ -14,6 +14,7 @@
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    invalidateAll();
     goto('/');
   };
 </script>
@@ -69,6 +70,9 @@
 </header>
 
 <style lang="scss">
+  .auth{
+    height: 50vh;
+  }
   header {
     background-color: #2b2b2b;
     width: 100%;
