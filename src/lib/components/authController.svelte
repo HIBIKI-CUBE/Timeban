@@ -1,6 +1,5 @@
 <script lang="ts">
   import { goto, invalidateAll } from '$app/navigation';
-  import { sineInOut } from 'svelte/easing';
   import type { PageData } from '../../routes/$types';
   import type { accounts } from 'google-one-tap';
   import { onMount } from 'svelte';
@@ -20,7 +19,7 @@
     await supabase.auth.signOut();
     await invalidateAll();
     await showGoogleOneTap();
-    await goto('/');
+    await goto('/', {invalidateAll: true});
   };
 
   async function handleSignInWithGoogle(response) {

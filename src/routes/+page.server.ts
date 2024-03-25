@@ -3,8 +3,10 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { Prisma } from '@prisma/client';
 
-export const load: PageServerLoad = async ({ params, parent }) => {
-  const owner = (await parent()).session?.user.id;
+export const load: PageServerLoad = async({params, parent, depends, locals:{supabase} }) => {
+  depends('supabase:auth');
+
+  const owner = (await supabase.auth.getUser()).data.user?.id;
   if (!owner) return;
   try {
     return {

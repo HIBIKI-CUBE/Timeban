@@ -3,7 +3,9 @@ import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { Prisma } from '@prisma/client';
 
-export const load: PageServerLoad = async ({ params, locals: { supabase } }) => {
+export const load: PageServerLoad = async ({ params, locals: { supabase }, depends }) => {
+  depends('supabase:auth');
+
   const owner = (await supabase.auth.getUser()).data.user?.id;
   if (!owner) redirect(303, '/');
   try {
