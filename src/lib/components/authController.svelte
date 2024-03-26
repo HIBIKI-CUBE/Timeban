@@ -92,6 +92,7 @@
 
   nav {
     display: flex;
+    width: 100%;
     a {
       display: flex;
       align-items: center;
@@ -100,12 +101,15 @@
       color: white;
       padding: 0 2ch;
       box-sizing: border-box;
+      height: 100%;
+      flex-wrap: nowrap;
     }
   }
 
   .logo {
     padding: 1em;
     box-sizing: border-box;
+    height: 100%;
   }
 
   .controls {
@@ -114,6 +118,7 @@
     box-sizing: border-box;
     padding: 1em;
     gap: 1em;
+    height: 100%;
   }
   .icon {
     border-radius: 999px;
