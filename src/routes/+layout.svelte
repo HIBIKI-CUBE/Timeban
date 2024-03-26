@@ -1,6 +1,7 @@
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
   import AuthController from '$lib/components/authController.svelte';
+  import type { SvelteHTMLElementEvent } from 'svelte-html-event';
   import { onMount } from 'svelte';
   import type { PageData } from '../routes/$types';
   import { invalidate } from '$app/navigation';
@@ -23,10 +24,20 @@
 
     return () => subscription.unsubscribe();
   });
+
+  function beforeUnload(e: SvelteHTMLElementEvent<'svelte:window', 'on:beforeunload'>) {
+    if ($communicating) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+    }
+  }
 </script>
 
 <AuthController {data} />
-  <img class="indicator {$navigating || $communicating ? 'loading' : ''}" src="logoAnim.svg" alt="" />
+<img class="indicator {$navigating || $communicating ? 'loading' : ''}" src="logoAnim.svg" alt="" />
+
+<svelte:window on:beforeunload={beforeUnload}/>
 <slot />
 
 <style lang="scss">
@@ -44,9 +55,9 @@
     box-sizing: border-box;
     border-radius: 0.5em;
     z-index: 9999;
-    transition: opacity .2s;
+    transition: opacity 0.2s;
     opacity: 1;
-    &:not(.loading){
+    &:not(.loading) {
       opacity: 0;
     }
   }
