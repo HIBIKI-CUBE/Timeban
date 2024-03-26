@@ -31,7 +31,8 @@
     if (e.detail.info.trigger === 'droppedIntoZone') {
       await Promise.all(
         e.detail.items.map((item, i) => {
-          if (item.row === BigInt(i) && item.id !== e.detail.info.id) return; //When the item is not moved
+          if ((item.row === BigInt(i) && item.id !== e.detail.info.id) || (e.detail.items.length === 1 && e.detail.items[0].lane === laneId)) return; //When the item is not moved
+          // console.log(item, e.detail, targetLaneIndex, laneId);
           const data = new FormData();
           data.append('id', String(item.id));
           data.append('lane', String(laneId));
