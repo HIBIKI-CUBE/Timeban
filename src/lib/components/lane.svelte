@@ -64,6 +64,7 @@
       font-weight: bold;
       margin: 0;
       width: 15ch;
+      color: #000;
     }
   }
 </style>
