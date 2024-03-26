@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "prisma generate && vite build",
+    "start": "node build/index.js",
     "preview": "vite preview",
     "test": "npm run test:integration && npm run test:unit",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -21,7 +22,7 @@
   "devDependencies": {
     "@playwright/test": "^1.28.1",
     "@prisma/client": "^5.10.2",
-    "@sveltejs/adapter-auto": "^3.0.0",
+    "@sveltejs/adapter-node": "^5.0.1",
     "@sveltejs/kit": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
     "@types/eslint": "^8.56.0",
