@@ -43,6 +43,8 @@
 <style lang="scss">
   :global(body) {
     margin: 0;
+    font-family: -apple-system, 'BlinkMacSystemFont', 'Hiragino Kaku Gothic ProN', 'メイリオ',
+      'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
   }
   .indicator {
     position: fixed;
