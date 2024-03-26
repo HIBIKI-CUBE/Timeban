@@ -15,6 +15,7 @@
   <form action="?/createItem" method="post" use:enhance>
     <input type="text" name="name" required />
     <input type="hidden" name="lane" value={lane.id} />
+    <input type="hidden" name="runsTimer" value={lane.runsTimer} />
     <input type="submit" value="追加" />
   </form>
 </div>

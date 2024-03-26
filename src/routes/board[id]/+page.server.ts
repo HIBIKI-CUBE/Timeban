@@ -53,10 +53,14 @@ export const actions = {
     const data = await request.formData();
     const name = String(data.get('name'));
     const lane = Number(data.get('lane'));
+    const runsTimer = Boolean(data.get('runsTimer'));
     await prisma.items.create({
       data: {
         name,
         lane,
+        Logs: {
+          create: runsTimer ? [{}] : [],
+        },
       },
     });
   },
