@@ -55,8 +55,6 @@
     "@supabase/ssr": "^0.1.0",
     "@supabase/supabase-js": "^2.39.7",
     "@types/google-one-tap": "^1.2.6",
-    "@types/google.accounts": "^0.0.14",
-    "@vercel/analytics": "^1.2.2",
-    "@vercel/speed-insights": "^1.0.10"
+    "@types/google.accounts": "^0.0.14"
   }
 }
