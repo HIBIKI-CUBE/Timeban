@@ -1,7 +1,9 @@
-import prisma from '$lib/server/prisma';
+import {PrismaClient} from '$lib/server/prisma';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { Prisma } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export const load: PageServerLoad = async({params, parent, depends, locals:{supabase} }) => {
   depends('supabase:auth');
