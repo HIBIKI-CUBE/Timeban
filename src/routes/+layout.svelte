@@ -27,9 +27,9 @@
 
   function beforeUnload(e: SvelteHTMLElementEvent<'svelte:window', 'on:beforeunload'>) {
     if ($communicating) {
-        e.preventDefault();
-        e.returnValue = '';
-        return '';
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
     }
   }
 </script>
@@ -37,7 +37,7 @@
 <AuthController {data} />
 <img class="indicator {$navigating || $communicating ? 'loading' : ''}" src="logoAnim.svg" alt="" />
 
-<svelte:window on:beforeunload={beforeUnload}/>
+<svelte:window on:beforeunload={beforeUnload} />
 <slot />
 
 <style lang="scss">

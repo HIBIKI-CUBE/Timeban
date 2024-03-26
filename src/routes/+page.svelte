@@ -10,9 +10,9 @@
   $: ({ boards, supabase } = data);
   $: ownerPromise = (async () => (await supabase.auth.getUser()).data.user?.id)();
 
-  afterUpdate(()=>{
+  afterUpdate(() => {
     $communicating = false;
-  })
+  });
 </script>
 
 {#await ownerPromise then owner}

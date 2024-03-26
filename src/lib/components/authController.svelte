@@ -21,7 +21,7 @@
     await supabase.auth.signOut();
     await invalidateAll();
     await showGoogleOneTap();
-    await goto('/', {invalidateAll: true});
+    await goto('/', { invalidateAll: true });
   };
 
   async function handleSignInWithGoogle(response) {
@@ -73,10 +73,16 @@
 
   <div class="controls">
     {#if !session?.user.id}
-    <div class="oneTap" bind:this={oneTapButton}></div>
+      <div class="oneTap" bind:this={oneTapButton}></div>
     {/if}
     {#if session?.user.user_metadata}
-      <img class="icon" src={session.user.user_metadata.avatar_url} alt="アカウントのアイコン" title="クリックしてログアウト" on:click={handleSignOut}/>
+      <img
+        class="icon"
+        src={session.user.user_metadata.avatar_url}
+        alt="アカウントのアイコン"
+        title="クリックしてログアウト"
+        on:click={handleSignOut}
+      />
     {/if}
   </div>
 </header>
