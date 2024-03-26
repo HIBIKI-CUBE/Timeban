@@ -48,7 +48,7 @@
     "vite-plugin-mkcert": "^1.17.5",
     "vitest": "^1.2.0"
   },
-  "type": "module",
+  "type": "commonjs",
   "dependencies": {
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/auth-ui-svelte": "^0.2.9",
