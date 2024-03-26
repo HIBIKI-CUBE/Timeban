@@ -1,12 +1,18 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { communicating } from '$lib/communicating';
   import type { PageData } from './$types';
+  import { afterUpdate } from 'svelte';
 
   export let data: PageData;
 
   let { boards, supabase } = data;
   $: ({ boards, supabase } = data);
   $: ownerPromise = (async () => (await supabase.auth.getUser()).data.user?.id)();
+
+  afterUpdate(()=>{
+    $communicating = false;
+  })
 </script>
 
 {#await ownerPromise then owner}

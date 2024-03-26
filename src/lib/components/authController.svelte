@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto, invalidateAll } from '$app/navigation';
+  import { communicating } from '$lib/communicating';
   import type { PageData } from '../../routes/$types';
   import type { accounts } from 'google-one-tap';
   import { onMount } from 'svelte';
@@ -16,6 +17,7 @@
   };
 
   const handleSignOut = async () => {
+    $communicating = true;
     await supabase.auth.signOut();
     await invalidateAll();
     await showGoogleOneTap();
@@ -23,12 +25,14 @@
   };
 
   async function handleSignInWithGoogle(response) {
+    $communicating = true;
     const { data, error } = await supabase.auth.signInWithIdToken({
       provider: 'google',
       token: response.credential,
       nonce: 'NONCE', // must be the same one as provided in data-nonce (if any)
     });
     await invalidateAll();
+    $communicating = false;
   }
 
   let oneTapButton: HTMLDivElement;
@@ -47,7 +51,6 @@
       itp_support: true,
     });
 
-    console.log(owner);
     GoogleAccountController.id.renderButton(oneTapButton, {
       theme: 'filled_blue',
       size: 'large',

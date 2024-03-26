@@ -5,6 +5,7 @@
   import type { PageData } from '../routes/$types';
   import { invalidate } from '$app/navigation';
   import { navigating } from '$app/stores';
+  import { communicating } from '$lib/communicating';
 
   export let data: PageData;
 
@@ -25,16 +26,14 @@
 </script>
 
 <AuthController {data} />
-{#if $navigating}
-  <img class="loading" src="logoAnim.svg" alt="" />
-{/if}
+  <img class="indicator {$navigating || $communicating ? 'loading' : ''}" src="logoAnim.svg" alt="" />
 <slot />
 
 <style lang="scss">
   :global(body) {
     margin: 0;
   }
-  .loading {
+  .indicator {
     position: fixed;
     bottom: 1em;
     right: 1em;
@@ -45,5 +44,10 @@
     box-sizing: border-box;
     border-radius: 0.5em;
     z-index: 9999;
+    transition: opacity .2s;
+    opacity: 1;
+    &:not(.loading){
+      opacity: 0;
+    }
   }
 </style>

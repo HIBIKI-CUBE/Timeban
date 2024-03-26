@@ -6,6 +6,7 @@
   import { dndzone, type DndEvent, type Item } from 'svelte-dnd-action';
   import { timers } from '$lib/timers';
   import Lane from '$lib/components/lane.svelte';
+  import { communicating } from '$lib/communicating';
 
   export let data: PageData;
   let { board } = data;
@@ -52,11 +53,15 @@
               $timers[item.id].duration = 0;
             }
           }
+          $communicating = true;
 
-          return fetch('?/updateItem', {
+          fetch('?/updateItem', {
             method: 'POST',
             body: data,
+          }).then(() => {
+            $communicating = false;
           });
+          return;
         }),
       );
     }
