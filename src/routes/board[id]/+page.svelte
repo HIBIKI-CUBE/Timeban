@@ -7,12 +7,16 @@
   import { timers } from '$lib/timers';
   import Lane from '$lib/components/lane.svelte';
   import { communicating } from '$lib/communicating';
+  import PauseButton from '$lib/components/pauseButton.svelte';
+  import { paused } from '$lib/paused';
 
   export let data: PageData;
   let { board } = data;
   $: ({ board } = data);
 
   const flipDurationMs = 250;
+
+    $paused = board?.paused ?? false;
 
   export const DndConsider = (e: CustomEvent<DndEvent<Item>>, laneId: bigint): void => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
@@ -78,6 +82,7 @@
     <h1>
       {board?.name}
     </h1>
+    <PauseButton items={board?.Lanes.filter(lane=>lane.runsTimer).map(lane=>lane.Items).flat()} {board} />
   </div>
   {#if board?.Lanes}
     <div class="lanes">
@@ -120,6 +125,15 @@
   }
   .board {
     padding: 0 1em 0;
+  }
+  .header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em 0;
+    h1 {
+      margin: 0;
+    }
   }
   .lanes {
     display: flex;

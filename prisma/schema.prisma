@@ -17,6 +17,7 @@ model Boards {
   created_at DateTime @default(now()) @db.Timestamptz(6)
   name       String   @default("")
   owner      String?  @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paused     Boolean  @default(false)
   users      users?   @relation(fields: [owner], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "public_Boards_owner_fkey")
   Lanes      Lanes[]
 

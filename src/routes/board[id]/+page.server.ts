@@ -87,15 +87,17 @@ export const actions = {
     const lane = Number(data.get('lane'));
     const row = Number(data.get('row'));
     const timerControl = String(data.get('timerControl'));
-    await prisma.items.update({
-      where: {
-        id: itemId,
-      },
-      data: {
-        lane,
-        row,
-      },
-    });
+    if (lane && (row || row === 0)) {
+      await prisma.items.update({
+        where: {
+          id: itemId,
+        },
+        data: {
+          lane,
+          row,
+        },
+      });
+    }
     if (timerControl === 'start') {
       await prisma.logs.create({
         data: {
@@ -122,5 +124,30 @@ export const actions = {
         },
       });
     }
+  },
+  updatePause: async ({ request, locals: { supabase } }) => {
+    const owner = (await supabase.auth.getUser()).data.user?.id;
+    if (!owner) return;
+    const data = await request.formData();
+    const boardId = Number(data.get('id'));
+    const pausedStr = String(data.get('paused'));
+    const paused = (() => {
+      switch (pausedStr) {
+        case 'paused':
+          return true;
+        case 'resumed':
+          return false;
+        default:
+          return false;
+      }
+    })();
+    await prisma.boards.update({
+      where: {
+        id: boardId,
+      },
+      data: {
+        paused,
+      },
+    });
   },
 } satisfies Actions;
