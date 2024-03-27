@@ -69,7 +69,7 @@
     padding: 0;
     border: none;
     background-color: #4aff6a;
-    color: #000
+    color: #000;
     &.paused{
       background-color: #ff4b4b;
       animation: blink 1s ease infinite;
