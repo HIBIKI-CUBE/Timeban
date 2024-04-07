@@ -48,16 +48,27 @@ async function readBoard(id: number, owner: string) {
 
 export const actions = {
   createItem: async ({ request, locals: { supabase } }) => {
-    const owner = (await supabase.auth.getUser()).data.user?.id;
-    if (!owner) return;
+    const ownerId = (await supabase.auth.getUser()).data.user?.id;
     const data = await request.formData();
     const name = String(data.get('name'));
-    const lane = Number(data.get('lane'));
+    const laneId = Number(data.get('lane'));
     const runsTimer = Boolean(data.get('runsTimer'));
+    const lane = await prisma.lanes
+      .findUniqueOrThrow({
+        where: {
+          id: laneId,
+          Boards: {
+            owner: ownerId,
+          },
+        },
+      })
+      .catch(() => {
+        return error(403, 'Forbidden');
+      });
     await prisma.items.create({
       data: {
         name,
-        lane,
+        lane: lane.id,
         Logs: {
           create: runsTimer ? [{}] : [],
         },
@@ -65,35 +76,72 @@ export const actions = {
     });
   },
   createLane: async ({ request, locals: { supabase } }) => {
-    const owner = (await supabase.auth.getUser()).data.user?.id;
-    if (!owner) return;
+    const ownerId = (await supabase.auth.getUser()).data.user?.id;
     const data = await request.formData();
     const name = String(data.get('name'));
-    const board = Number(data.get('board'));
+    const boardId = Number(data.get('board'));
     const runsTimer = Boolean(data.get('runsTimer'));
+    const board = await prisma.boards
+      .findUniqueOrThrow({
+        where: {
+          id: boardId,
+          owner: ownerId,
+        },
+      })
+      .catch(() => {
+        return error(403, 'Forbidden');
+      });
     await prisma.lanes.create({
       data: {
         name,
-        board,
+        board: board.id,
         runsTimer,
       },
     });
   },
   updateItem: async ({ request, locals: { supabase } }) => {
-    const owner = (await supabase.auth.getUser()).data.user?.id;
-    if (!owner) return;
+    const ownerId = (await supabase.auth.getUser()).data.user?.id;
     const data = await request.formData();
     const itemId = Number(data.get('id'));
-    const lane = Number(data.get('lane'));
+    const laneId = Number(data.get('lane'));
     const row = Number(data.get('row'));
     const timerControl = String(data.get('timerControl'));
-    if (lane && (row || row === 0)) {
-      await prisma.items.update({
+    const item = await prisma.items
+      .findUniqueOrThrow({
         where: {
           id: itemId,
+          Lanes: {
+            Boards: {
+              owner: ownerId,
+            },
+          },
+        },
+        include: {
+          Lanes: true,
+        },
+      })
+      .catch(() => {
+        return error(403, 'Forbidden');
+      });
+    if ((laneId || laneId === 0) && (row || row === 0)) {
+      const lane = await prisma.lanes
+        .findUniqueOrThrow({
+          where: {
+            id: laneId,
+            Boards: {
+              owner: ownerId,
+            },
+          },
+        })
+        .catch(() => {
+          return error(403, 'Forbidden');
+        });
+      await prisma.items.update({
+        where: {
+          id: item.id,
         },
         data: {
-          lane,
+          lane: lane.id,
           row,
         },
       });
@@ -101,14 +149,14 @@ export const actions = {
     if (timerControl === 'start') {
       await prisma.logs.create({
         data: {
-          item: itemId,
+          item: item.id,
         },
       });
     }
     if (timerControl === 'stop') {
       const target = await prisma.logs.findFirst({
         where: {
-          item: itemId,
+          item: item.id,
         },
         orderBy: {
           id: 'desc',
@@ -126,8 +174,7 @@ export const actions = {
     }
   },
   updatePause: async ({ request, locals: { supabase } }) => {
-    const owner = (await supabase.auth.getUser()).data.user?.id;
-    if (!owner) return;
+    const ownerId = (await supabase.auth.getUser()).data.user?.id;
     const data = await request.formData();
     const boardId = Number(data.get('id'));
     const pausedStr = String(data.get('paused'));
@@ -141,9 +188,19 @@ export const actions = {
           return false;
       }
     })();
+    const board = await prisma.boards
+      .findUniqueOrThrow({
+        where: {
+          id: boardId,
+          owner: ownerId,
+        },
+      })
+      .catch(() => {
+        return error(403, 'Forbidden');
+      });
     await prisma.boards.update({
       where: {
-        id: boardId,
+        id: board.id,
       },
       data: {
         paused,
