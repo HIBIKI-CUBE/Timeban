@@ -16,7 +16,7 @@
 
   const flipDurationMs = 250;
 
-    $paused = board?.paused ?? false;
+  $paused = board?.paused ?? false;
 
   export const DndConsider = (e: CustomEvent<DndEvent<Item>>, laneId: bigint): void => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
@@ -77,38 +77,45 @@
   };
 </script>
 
-<div class="board">
-  <div class="header">
-    <h1>
-      {board?.name}
-    </h1>
-    <PauseButton items={board?.Lanes.filter(lane=>lane.runsTimer).map(lane=>lane.Items).flat()} {board} />
-  </div>
-  {#if board?.Lanes}
-    <div class="lanes">
-      {#each board?.Lanes as lane}
-        <Lane {lane}>
-          <div
-            class="items"
-            use:dndzone={{ items: lane.Items, flipDurationMs }}
-            on:consider={e => {
-              DndConsider(e, lane.id);
-            }}
-            on:finalize={e => {
-              DndFinalize(e, lane.id);
-            }}
-          >
-            {#each lane.Items as item (item.id)}
-              <div animate:flip={{ duration: flipDurationMs }}>
-                <Card {item} isRunning={lane.runsTimer} />
-              </div>
-            {/each}
-          </div>
-        </Lane>
-      {/each}
+{#if board}
+  <div class="board">
+    <div class="header">
+      <h1>
+        {board?.name}
+      </h1>
+      <PauseButton
+        items={board?.Lanes.filter(lane => lane.runsTimer)
+          .map(lane => lane.Items)
+          .flat()}
+        {board}
+      />
     </div>
-  {/if}
-</div>
+    {#if board?.Lanes}
+      <div class="lanes">
+        {#each board?.Lanes as lane}
+          <Lane {lane}>
+            <div
+              class="items"
+              use:dndzone={{ items: lane.Items, flipDurationMs }}
+              on:consider={e => {
+                DndConsider(e, lane.id);
+              }}
+              on:finalize={e => {
+                DndFinalize(e, lane.id);
+              }}
+            >
+              {#each lane.Items as item (item.id)}
+                <div animate:flip={{ duration: flipDurationMs }}>
+                  <Card {item} isRunning={lane.runsTimer} />
+                </div>
+              {/each}
+            </div>
+          </Lane>
+        {/each}
+      </div>
+    {/if}
+  </div>
+{/if}
 
 <form action="?/createLane" method="post" use:enhance>
   <label for="name">レーンを作成</label>
@@ -126,7 +133,7 @@
   .board {
     padding: 0 1em 0;
   }
-  .header{
+  .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
