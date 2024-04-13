@@ -1,0 +1,10 @@
+name = "board-keeper"
+account_id = "91f6174591d63154ca83239ff39c1813"
+
+main = "./.cloudflare/worker.js"
+site.bucket = "./.cloudflare/public"
+
+build.command = "bun run build"
+
+compatibility_date = "2023-12-12"
+workers_dev = true
