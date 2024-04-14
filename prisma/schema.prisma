@@ -11,48 +11,6 @@ datasource db {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model Boards {
-  id         BigInt   @id @default(autoincrement())
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  name       String   @default("")
-  owner      String?  @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  paused     Boolean  @default(false)
-  users      users?   @relation(fields: [owner], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "public_Boards_owner_fkey")
-  Lanes      Lanes[]
-
-  @@schema("public")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model Items {
-  id         BigInt    @id @default(autoincrement())
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
-  name       String    @default("")
-  deadline   DateTime? @db.Timestamptz(6)
-  lane       BigInt?
-  row        BigInt?
-  Lanes      Lanes?    @relation(fields: [lane], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "public_Items_lane_fkey")
-  Logs       Logs[]
-
-  @@schema("public")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model Lanes {
-  id         BigInt   @id @default(autoincrement())
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  name       String   @default("")
-  board      BigInt?
-  runsTimer  Boolean  @default(false)
-  Items      Items[]
-  Boards     Boards?  @relation(fields: [board], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "public_Lanes_board_fkey")
-
-  @@schema("public")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model audit_log_entries {
   instance_id String?   @db.Uuid
   id          String    @id @db.Uuid
@@ -77,6 +35,7 @@ model flow_state {
   created_at             DateTime?             @db.Timestamptz(6)
   updated_at             DateTime?             @db.Timestamptz(6)
   authentication_method  String
+  auth_code_issued_at    DateTime?             @db.Timestamptz(6)
   saml_relay_states      saml_relay_states[]
 
   @@index([created_at(sort: Desc)])
@@ -191,6 +150,7 @@ model saml_providers {
   attribute_mapping Json?
   created_at        DateTime?     @db.Timestamptz(6)
   updated_at        DateTime?     @db.Timestamptz(6)
+  name_id_format    String?
   sso_providers     sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([sso_provider_id])
@@ -327,13 +287,70 @@ model users {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model Logs {
-  id         BigInt    @id @default(autoincrement())
+model Boards {
+  id         Int      @id @unique @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  name       String   @default("")
+  owner      String   @db.Uuid
+  paused     Boolean  @default(false)
+  users      users    @relation(fields: [owner], references: [id], onDelete: Cascade, map: "public_Boards_owner_fkey")
+  Lanes      Lanes[]
+  Tags       Tags[]
+
+  @@schema("public")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Items {
+  id         Int       @id @unique @default(autoincrement())
   created_at DateTime  @default(now()) @db.Timestamptz(6)
-  started_at DateTime? @default(now()) @db.Timestamptz(6)
+  name       String    @default("")
+  deadline   DateTime? @db.Timestamptz(6)
+  lane       Int
+  row        Int?
+  Lanes      Lanes     @relation(fields: [lane], references: [id], onDelete: Cascade, map: "public_Items_lane_fkey")
+  Logs       Logs[]
+
+  @@schema("public")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Lanes {
+  id         Int      @id @unique @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  name       String   @default("")
+  board      Int
+  runsTimer  Boolean  @default(false)
+  column     Int?
+  Items      Items[]
+  Boards     Boards   @relation(fields: [board], references: [id], onDelete: Cascade, map: "public_Lanes_board_fkey")
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Logs {
+  id         Int       @id @unique @default(autoincrement())
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  started_at DateTime  @default(now()) @db.Timestamptz(6)
   stopped_at DateTime? @db.Timestamptz(6)
-  item       BigInt?
-  Items      Items?    @relation(fields: [item], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "public_Logs_item_fkey")
+  item       Int
+  Items      Items     @relation(fields: [item], references: [id], onDelete: Cascade, map: "public_Logs_item_fkey")
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Tags {
+  id           Int      @id @unique @default(autoincrement())
+  name         String
+  board        Int
+  is_important Boolean  @default(false)
+  color_hex    String
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  Boards       Boards   @relation(fields: [board], references: [id], onDelete: Cascade, map: "public_Tags_board_fkey")
 
   @@schema("public")
 }

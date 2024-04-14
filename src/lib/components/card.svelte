@@ -6,16 +6,17 @@
 
   export let isRunning = false;
   export let item: { Logs: Logs[] } & Items;
-  const id = Number(item?.id);
-  const [lastLog] = item?.Logs.slice(-1) ?? undefined;
-  if (lastLog && lastLog.started_at && !lastLog.stopped_at && isRunning && !$paused) {
+  const { id } = item;
+  const [lastLog] = item.Logs.slice(-1) ?? undefined;
+  const needsResume = lastLog && lastLog.started_at && !lastLog.stopped_at && isRunning && !$paused;
+  if (needsResume) {
     $timers[id] = {
       started_at: lastLog.started_at,
       sessionOffset: 0,
       duration: 0,
     };
   }
-  let logSum = item?.Logs.reduce(
+  let logSum = item.Logs.reduce(
     (sum, log) =>
       sum +
       (log.started_at && log.stopped_at
@@ -29,7 +30,9 @@
   }
   $: formatted =
     (new Date(
-      ((isRunning && !$paused && $timers[id]?.duration) || 0) + logSum + ($timers[id]?.sessionOffset || 0),
+      ((isRunning && !$paused && $timers[id]?.duration) || 0) +
+        logSum +
+        ($timers[id]?.sessionOffset || 0),
     )
       .toUTCString()
       .match(/..:..:../)?.[0] ??
