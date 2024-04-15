@@ -9,6 +9,9 @@
   import { communicating } from '$lib/communicating';
   import PauseButton from '$lib/components/pauseButton.svelte';
   import { paused } from '$lib/paused';
+  import { page } from '$app/stores';
+  import { trpc } from '$lib/trpc/client';
+  import { invalidateAll } from '$app/navigation';
 
   export let data: PageData;
   let { board } = data;
@@ -75,6 +78,18 @@
       );
     }
   };
+
+  let newLaneName = '', newLaneRunsTimer = false;
+  const createLane = async () => {
+    await trpc($page).lane.create.mutate({
+      name: newLaneName,
+      runsTimer: newLaneRunsTimer,
+      boardId: board.id,
+    });
+    newLaneName = '';
+    newLaneRunsTimer = false;
+    invalidateAll();
+  };
 </script>
 
 {#if board}
@@ -117,12 +132,11 @@
   </div>
 {/if}
 
-<form action="?/createLane" method="post" use:enhance>
+<form on:submit|preventDefault={createLane}>
   <label for="name">レーンを作成</label>
-  <input type="text" name="name" required />
-  <input type="checkbox" name="runsTimer" id="runsTimer" />
+  <input type="text" name="name" required bind:value={newLaneName} />
+  <input type="checkbox" name="runsTimer" id="runsTimer" bind:checked={newLaneRunsTimer} />
   <label for="runsTimer">このレーンでタイマーを作動させる</label>
-  <input type="hidden" name="board" value={board?.id} />
   <input type="submit" value="作成" />
 </form>
 
