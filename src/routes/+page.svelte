@@ -14,7 +14,7 @@
 
   let boardName = '';
   const createBoard = async () => {
-    trpc($page).createBoard.mutate(boardName);
+    trpc($page).board.create.mutate(boardName);
     boardName = '';
     invalidateAll();
   };

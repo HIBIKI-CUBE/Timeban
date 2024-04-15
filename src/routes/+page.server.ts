@@ -8,7 +8,7 @@ export const load: PageServerLoad = async event => {
   depends('supabase:auth');
 
   return await createCaller(await createContext(event))
-    .getBoards()
+    .board.list()
     .catch(err => {
       error(404, `Not found: ${err instanceof Error ? err.message : ''}`);
     });
