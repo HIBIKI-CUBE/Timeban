@@ -1,52 +1,22 @@
 import prisma from '$lib/server/prisma';
-import { error, redirect } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { Prisma } from '@prisma/client';
 import { createContext } from '$lib/trpc/context';
-import { createCaller } from '$lib/trpc/router';
+import { createCaller } from '$lib/trpc/createCaller';
 
-export const load: PageServerLoad = async ({ params, locals: { supabase }, depends }) => {
+export const load: PageServerLoad = async event => {
+  const {
+    params: { id },
+    depends,
+  } = event;
   depends('supabase:auth');
 
-  const owner = (await supabase.auth.getUser()).data.user?.id;
-  if (!owner) redirect(303, '/');
-  try {
-    return readBoard(Number(params.id), owner);
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError) {
-      error(404, `Not found: ${err.message}`);
-    }
-  }
+  return await createCaller(await createContext(event))
+    .board(Number(id))
+    .catch(err => {
+      error(404, `Not found: ${err instanceof Error ? err.message : ''}`);
+    });
 };
-
-async function readBoard(id: number, owner: string) {
-  return {
-    board: await prisma.boards.findFirst({
-      where: {
-        id,
-        owner,
-      },
-      include: {
-        Lanes: {
-          include: {
-            Items: {
-              include: {
-                Logs: {
-                  orderBy: {
-                    created_at: 'asc',
-                  },
-                },
-              },
-              orderBy: {
-                row: 'asc',
-              },
-            },
-          },
-        },
-      },
-    }),
-  };
-}
 
 export const actions = {
   createItem: async ({ request, locals: { supabase } }) => {
