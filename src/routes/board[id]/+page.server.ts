@@ -2,6 +2,8 @@ import prisma from '$lib/server/prisma';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { Prisma } from '@prisma/client';
+import { createContext } from '$lib/trpc/context';
+import { createCaller } from '$lib/trpc/router';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase }, depends }) => {
   depends('supabase:auth');
