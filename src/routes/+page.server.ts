@@ -1,7 +1,8 @@
 import prisma from '$lib/server/prisma';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { Prisma } from '@prisma/client';
+import { createContext } from '$lib/trpc/context';
+import { createCaller } from '$lib/trpc/createCaller';
 
 export const load: PageServerLoad = async ({ params, parent, depends, locals: { supabase } }) => {
   depends('supabase:auth');
@@ -21,19 +22,4 @@ export const load: PageServerLoad = async ({ params, parent, depends, locals: { 
       error(404, `Not found: ${err.message}`);
     }
   }
-};
-
-export const actions = {
-  createBoard: async ({ request, locals: { supabase } }) => {
-    const owner = (await supabase.auth.getUser()).data.user?.id;
-    if (!owner) return;
-    const data = await request.formData();
-    const name = String(data.get('name'));
-    await prisma.boards.create({
-      data: {
-        name,
-        owner,
-      },
-    });
-  },
 };

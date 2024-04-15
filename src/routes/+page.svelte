@@ -1,14 +1,23 @@
 <script lang="ts">
-  import { enhance } from '$app/forms';
   import { communicating } from '$lib/communicating';
   import type { PageData } from './$types';
   import { afterUpdate } from 'svelte';
+  import { page } from '$app/stores';
+  import { trpc } from '$lib/trpc/client';
+  import { invalidateAll } from '$app/navigation';
 
   export let data: PageData;
 
   let { boards, supabase } = data;
   $: ({ boards, supabase } = data);
   $: ownerPromise = (async () => (await supabase.auth.getUser()).data.user?.id)();
+
+  let boardName = '';
+  const createBoard = async () => {
+    trpc($page).createBoard.mutate(boardName);
+    boardName = '';
+    invalidateAll();
+  };
 
   afterUpdate(() => {
     $communicating = false;
@@ -24,9 +33,9 @@
         </a>
       {/each}
     {/if}
-    <form action="?/createBoard" method="post" use:enhance>
+    <form on:submit|preventDefault={createBoard}>
       <label for="name">ボードを作成</label>
-      <input type="text" name="name" required />
+      <input type="text" name="name" required bind:value={boardName} />
       <input type="submit" value="作成" />
     </form>
   {/if}
