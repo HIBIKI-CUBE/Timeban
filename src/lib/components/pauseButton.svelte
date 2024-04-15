@@ -1,7 +1,7 @@
 <script lang="ts">
   import { paused } from '$lib/paused';
-  import { PauseSolid } from 'svelte-awesome-icons';
-  import { PlaySolid } from 'svelte-awesome-icons';
+  import PauseSolid from 'svelte-awesome-icons/PauseSolid.svelte';
+  import PlaySolid from 'svelte-awesome-icons/PlaySolid.svelte';
   import type { Boards, Items } from '@prisma/client';
   import { communicating } from '$lib/communicating';
   import { timers } from '$lib/timers';
@@ -70,16 +70,16 @@
     border: none;
     background-color: #4aff6a;
     color: #000;
-    &.paused{
+    &.paused {
       background-color: #ff4b4b;
       animation: blink 1s ease infinite;
     }
   }
-  @keyframes blink{
-    from{
+  @keyframes blink {
+    from {
       opacity: 1;
     }
-    to{
+    to {
       opacity: 0.5;
     }
   }
