@@ -12,7 +12,7 @@ export const load: PageServerLoad = async event => {
   depends('supabase:auth');
 
   return await createCaller(await createContext(event))
-    .board(Number(id))
+    .getBoard(Number(id))
     .catch(err => {
       error(404, `Not found: ${err instanceof Error ? err.message : ''}`);
     });

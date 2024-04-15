@@ -27,6 +27,7 @@ export const router = api.router({
 
       return { board };
     }),
+  getBoard: api.procedure
     .input(
       z
         .number({
@@ -41,30 +42,34 @@ export const router = api.router({
     .query(async opts => {
       const owner = (await opts.ctx.event.locals.supabase.auth.getUser()).data.user?.id;
       if (!owner) throw new TRPCError({ code: 'FORBIDDEN' });
-      const board = await prisma.boards.findFirst({
-        where: {
-          id: opts.input,
-          owner,
-        },
-        include: {
-          Lanes: {
-            include: {
-              Items: {
-                include: {
-                  Logs: {
-                    orderBy: {
-                      created_at: 'asc',
+      const board = await prisma.boards
+        .findFirstOrThrow({
+          where: {
+            id: opts.input,
+            owner,
+          },
+          include: {
+            Lanes: {
+              include: {
+                Items: {
+                  include: {
+                    Logs: {
+                      orderBy: {
+                        created_at: 'asc',
+                      },
                     },
                   },
-                },
-                orderBy: {
-                  row: 'asc',
+                  orderBy: {
+                    row: 'asc',
+                  },
                 },
               },
             },
           },
-        },
-      });
+        })
+        .catch(() => {
+          throw new TRPCError({ code: 'NOT_FOUND' });
+        });
 
       return { board };
     }),
