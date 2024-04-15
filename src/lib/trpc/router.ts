@@ -7,6 +7,16 @@ import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 export const api = initTRPC.context<Context>().create();
 
 export const router = api.router({
+  getBoards: api.procedure.query(async opts => {
+    const owner = (await opts.ctx.event.locals.supabase.auth.getUser()).data.user?.id;
+    if (!owner) throw new TRPCError({ code: 'FORBIDDEN' });
+    const boards = await prisma.boards.findMany({
+      where: {
+        owner,
+      },
+    });
+    return { boards };
+  }),
   createBoard: api.procedure
     .input(
       z.string({
