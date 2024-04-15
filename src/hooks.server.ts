@@ -1,6 +1,8 @@
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import { createServerClient } from '@supabase/ssr';
 import type { Handle } from '@sveltejs/kit';
+import { api } from '$lib/server/api';
+import { Hono } from 'hono';
 
 export const handle: Handle = async ({ event, resolve }) => {
   event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
@@ -40,6 +42,21 @@ export const handle: Handle = async ({ event, resolve }) => {
     } = await event.locals.supabase.auth.getSession();
     return { session, user };
   };
+
+  type Variables = {
+    owner: string;
+  };
+  if (event.url.pathname.startsWith('/api')) {
+    const owner = (await event.locals.supabase.auth.getUser()).data.user?.id;
+    const app = new Hono<{ Variables: Variables }>({ strict: false })
+      .use(async (c, next) => {
+        console.log(owner);
+        c.set('owner', owner ?? '');
+        await next();
+      })
+      .route('/api', api);
+    return await app.fetch(event.request);
+  }
 
   return resolve(event, {
     filterSerializedResponseHeaders(name) {

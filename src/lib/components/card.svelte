@@ -11,7 +11,7 @@
   const needsResume = lastLog && lastLog.started_at && !lastLog.stopped_at && isRunning && !$paused;
   if (needsResume) {
     $timers[id] = {
-      started_at: lastLog.started_at,
+      started_at: new Date(lastLog.started_at),
       sessionOffset: 0,
       duration: 0,
     };
@@ -20,7 +20,7 @@
     (sum, log) =>
       sum +
       (log.started_at && log.stopped_at
-        ? log.stopped_at?.getTime() - log.started_at?.getTime()
+        ? new Date(log.stopped_at).getTime() - new Date(log.started_at).getTime()
         : 0),
     0,
   );

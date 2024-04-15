@@ -1,19 +1,31 @@
 import prisma from '$lib/server/prisma';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { Prisma } from '@prisma/client';
+import { hc } from 'hono/client';
+import { endpoint, type APIRoute } from '$lib/server/api';
+import type { Items } from '@prisma/client';
 
-export const load: PageServerLoad = async ({ params, locals: { supabase }, depends }) => {
+
+
+export const load: PageServerLoad = async ({ params, locals: { supabase }, depends, fetch }) => {
   depends('supabase:auth');
 
-  const owner = (await supabase.auth.getUser()).data.user?.id;
-  if (!owner) redirect(303, '/');
-  try {
-    return readBoard(Number(params.id), owner);
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError) {
-      error(404, `Not found: ${err.message}`);
-    }
+  const client = hc<APIRoute>(endpoint);
+  const board = await client.readBoard[':id'].$get(
+    {
+      param: {
+        id: params.id,
+      },
+    },
+    {
+      fetch,
+    },
+  );
+  if (board.ok) {
+    const res = await board.json();
+
+  } else {
+    redirect(303, '/');
   }
 };
 
