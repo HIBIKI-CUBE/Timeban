@@ -3,7 +3,7 @@
   import { flip } from 'svelte/animate';
   import Card from '$lib/components/card.svelte';
   import type { PageData } from './$types';
-  import { dndzone, type DndEvent, type Item } from 'svelte-dnd-action';
+  import { dndzone, type DndEvent } from 'svelte-dnd-action';
   import { timers } from '$lib/timers';
   import Lane from '$lib/components/lane.svelte';
   import { communicating } from '$lib/communicating';
@@ -12,6 +12,7 @@
   import { page } from '$app/stores';
   import { trpc } from '$lib/trpc/client';
   import { invalidateAll } from '$app/navigation';
+  import type { Items, Logs } from '@prisma/client';
 
   export let data: PageData;
   let { board } = data;
@@ -21,7 +22,7 @@
 
   $paused = board?.paused ?? false;
 
-  export const DndConsider = (e: CustomEvent<DndEvent<Item>>, laneId: number): void => {
+  export const DndConsider = (e: CustomEvent<DndEvent<Items&Logs[]>>, laneId: number): void => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
     if (
       targetLaneIndex === undefined ||
@@ -31,7 +32,7 @@
       return;
     board.Lanes[targetLaneIndex].Items = e.detail.items;
   };
-  export const DndFinalize = async (e: CustomEvent<DndEvent<Item>>, laneId: number) => {
+  export const DndFinalize = async (e: CustomEvent<DndEvent<Items&Logs[]>>, laneId: number) => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
     if (targetLaneIndex === undefined || targetLaneIndex === -1 || !board) return;
     board.Lanes[targetLaneIndex].Items = e.detail.items;
@@ -39,17 +40,12 @@
       await Promise.all(
         e.detail.items.map((item, i) => {
           if (
-            (item.row === BigInt(i) && item.id !== e.detail.info.id) ||
+            (item.row === i && item.id !== Number(e.detail.info.id)) ||
             (e.detail.items.length === 1 && e.detail.items[0].lane === laneId)
           )
             return; //When the item is not moved
           // console.log(item, e.detail, targetLaneIndex, laneId);
-          const data = new FormData();
-          data.append('id', String(item.id));
-          data.append('lane', String(laneId));
-          data.append('row', String(i));
           if (board?.Lanes[targetLaneIndex].runsTimer) {
-            data.append('timerControl', 'start');
             if (!$timers[item.id]) {
               $timers[item.id] = {
                 started_at: new Date(),
@@ -59,7 +55,6 @@
             }
             $timers[item.id].started_at = new Date();
           } else {
-            data.append('timerControl', 'stop');
             if ($timers[item.id]) {
               $timers[item.id].sessionOffset += $timers[item.id].duration;
               $timers[item.id].duration = 0;
@@ -67,19 +62,24 @@
           }
           $communicating = true;
 
-          fetch('?/updateItem', {
-            method: 'POST',
-            body: data,
-          }).then(() => {
-            $communicating = false;
-          });
+          trpc($page)
+            .item.update.mutate({
+              itemId: item.id,
+              laneId: laneId,
+              row: i,
+              runsTimer: board?.Lanes[targetLaneIndex].runsTimer,
+            })
+            .then(() => {
+              $communicating = false;
+            });
           return;
         }),
       );
     }
   };
 
-  let newLaneName = '', newLaneRunsTimer = false;
+  let newLaneName = '',
+    newLaneRunsTimer = false;
   const createLane = async () => {
     await trpc($page).lane.create.mutate({
       name: newLaneName,
