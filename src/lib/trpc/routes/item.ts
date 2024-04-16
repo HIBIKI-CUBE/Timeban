@@ -5,6 +5,50 @@ import prisma from '$lib/server/prisma';
 import { getOwnerOrForbidden } from '../getOwnerOrForbidden';
 
 export const item = api.router({
+  create: api.procedure
+    .input(
+      z.object({
+        name: z.string({
+          required_error: 'Item name is missing',
+          invalid_type_error: 'Item name must be a string',
+          description: 'Item name',
+        }),
+        laneId: z
+          .number({
+            required_error: 'Lane id is missing',
+            invalid_type_error: 'Lane id must be a number',
+            description: 'Lane id',
+          })
+          .int()
+          .positive()
+          .safe(),
+        runsTimer: z.boolean().optional().default(false),
+      }),
+    )
+    .mutation(async ({ ctx: { event }, input: { name, laneId, runsTimer } }) => {
+      const owner = await getOwnerOrForbidden(event);
+      const lane = await prisma.lanes
+        .findUniqueOrThrow({
+          where: {
+            id: laneId,
+            Boards: {
+              owner,
+            },
+          },
+        })
+        .catch(() => {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        });
+      await prisma.items.create({
+        data: {
+          name,
+          lane: lane.id,
+          Logs: {
+            create: runsTimer ? [{}] : [],
+          },
+        },
+      });
+    }),
   update: api.procedure
     .input(
       z.object({
