@@ -22,7 +22,10 @@
 
   $paused = board?.paused ?? false;
 
-  export const DndConsider = (e: CustomEvent<DndEvent<Items&Logs[]>>, laneId: number): void => {
+  export const DndConsider = (
+    e: CustomEvent<DndEvent<Items & { Logs: Logs[] }>>,
+    laneId: number,
+  ): void => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
     if (
       targetLaneIndex === undefined ||
@@ -32,7 +35,10 @@
       return;
     board.Lanes[targetLaneIndex].Items = e.detail.items;
   };
-  export const DndFinalize = async (e: CustomEvent<DndEvent<Items&Logs[]>>, laneId: number) => {
+  export const DndFinalize = async (
+    e: CustomEvent<DndEvent<Items & { Logs: Logs[] }>>,
+    laneId: number,
+  ) => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
     if (targetLaneIndex === undefined || targetLaneIndex === -1 || !board) return;
     board.Lanes[targetLaneIndex].Items = e.detail.items;
