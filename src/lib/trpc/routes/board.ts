@@ -78,4 +78,35 @@ export const board = api.router({
 
       return { board };
     }),
+  masterTimer: api.procedure
+    .input(
+      z.object({
+        boardId: z
+          .number({
+            required_error: 'Board id is missing',
+            invalid_type_error: 'Board id must be a number',
+            description: 'Board id',
+          })
+          .int()
+          .positive()
+          .safe(),
+        paused: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx: { event }, input }) => {
+      const owner = await getOwnerOrForbidden(event);
+      await prisma.boards
+        .update({
+          where: {
+            id: input.boardId,
+            owner,
+          },
+          data: {
+            paused: input.paused,
+          },
+        })
+        .catch(() => {
+          throw new TRPCError({ code: 'NOT_FOUND' });
+        });
+    }),
 });

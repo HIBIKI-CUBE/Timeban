@@ -5,6 +5,8 @@
   import type { Boards, Items } from '@prisma/client';
   import { communicating } from '$lib/communicating';
   import { timers } from '$lib/timers';
+  import { page } from '$app/stores';
+  import { trpc } from '$lib/trpc/client';
 
   export let items: Items[] = [];
   export let board: Boards;
@@ -12,12 +14,9 @@
   async function togglePause() {
     $paused = !$paused;
     $communicating = true;
-    const data = new FormData();
-    data.append('id', String(board.id));
-    data.append('paused', $paused ? 'paused' : 'resumed');
-    fetch('?/updatePause', {
-      method: 'POST',
-      body: data,
+    await trpc($page).board.masterTimer.mutate({
+      boardId: board.id,
+      paused: $paused
     });
     await Promise.all(
       items.map(async item => {
@@ -37,6 +36,7 @@
           }
           $timers[itemId].started_at = new Date();
         }
+
         const data = new FormData();
         data.append('id', String(itemId));
         data.append('timerControl', $paused ? 'stop' : 'start');
