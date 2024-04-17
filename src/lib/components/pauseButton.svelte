@@ -16,33 +16,29 @@
     $communicating = true;
     await trpc($page).board.masterTimer.mutate({
       boardId: board.id,
-      paused: $paused
+      paused: $paused,
     });
     await Promise.all(
       items.map(async item => {
-        const itemId = Number(item.id);
         if ($paused) {
-          if ($timers[itemId]) {
-            $timers[itemId].sessionOffset += $timers[itemId].duration;
-            $timers[itemId].duration = 0;
+          if ($timers[item.id]) {
+            $timers[item.id].sessionOffset += $timers[item.id].duration;
+            $timers[item.id].duration = 0;
           }
         } else {
-          if (!$timers[itemId]) {
-            $timers[itemId] = {
+          if (!$timers[item.id]) {
+            $timers[item.id] = {
               started_at: new Date(),
               sessionOffset: 0,
               duration: 0,
             };
           }
-          $timers[itemId].started_at = new Date();
+          $timers[item.id].started_at = new Date();
         }
 
-        const data = new FormData();
-        data.append('id', String(itemId));
-        data.append('timerControl', $paused ? 'stop' : 'start');
-        fetch('?/updateItem', {
-          method: 'POST',
-          body: data,
+        await trpc($page).item.update.mutate({
+          itemId: item.id,
+          runsTimer: !$paused,
         });
       }),
     );

@@ -69,7 +69,8 @@ export const item = api.router({
           })
           .int()
           .positive()
-          .safe(),
+          .safe()
+          .optional(),
         row: z
           .number({
             required_error: 'Row number is missing',
@@ -78,7 +79,8 @@ export const item = api.router({
           })
           .int()
           .nonnegative()
-          .safe(),
+          .safe()
+          .optional(),
         runsTimer: z.boolean().optional(),
       }),
     )
@@ -99,9 +101,9 @@ export const item = api.router({
           },
         })
         .catch(() => {
-          throw new TRPCError({ code: 'FORBIDDEN' });
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Item not found' });
         });
-      if (laneId && (row || row === 0)) {
+      if (laneId && row !== undefined) {
         const lane = await prisma.lanes
           .findUniqueOrThrow({
             where: {
@@ -112,7 +114,10 @@ export const item = api.router({
             },
           })
           .catch(() => {
-            throw new TRPCError({ code: 'FORBIDDEN' });
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Lane not found',
+            });
           });
         await prisma.items.update({
           where: {
@@ -140,15 +145,17 @@ export const item = api.router({
             id: 'desc',
           },
         });
-        if (!target?.id || target.stopped_at !== null) return;
-        await prisma.logs.update({
-          where: {
-            id: target.id,
-          },
-          data: {
-            stopped_at: new Date(),
-          },
-        });
+        if (!target) return;
+        if (target.stopped_at === null) {
+          await prisma.logs.update({
+            where: {
+              id: target.id,
+            },
+            data: {
+              stopped_at: new Date(),
+            },
+          });
+        }
       }
     }),
 });

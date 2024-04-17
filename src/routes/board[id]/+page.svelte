@@ -40,7 +40,7 @@
     laneId: number,
   ) => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
-    if (targetLaneIndex === undefined || targetLaneIndex === -1 || !board) return;
+    if (targetLaneIndex === -1) return;
     board.Lanes[targetLaneIndex].Items = e.detail.items;
     if (e.detail.info.trigger === 'droppedIntoZone') {
       await Promise.all(
