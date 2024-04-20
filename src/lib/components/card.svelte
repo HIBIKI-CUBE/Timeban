@@ -7,16 +7,8 @@
   export let isRunning = false;
   export let item: { Logs: Logs[] } & Items;
   const { id } = item;
-  const [lastLog] = item.Logs.slice(-1) ?? undefined;
-  const needsResume = lastLog && lastLog.started_at && !lastLog.stopped_at && isRunning && !$paused;
-  if (needsResume) {
-    $timers[id] = {
-      started_at: lastLog.started_at,
-      sessionOffset: 0,
-      duration: 0,
-    };
-  }
-  let logSum = item.Logs.reduce(
+
+  const logSum = item.Logs.reduce(
     (sum, log) =>
       sum +
       (log.started_at && log.stopped_at
@@ -24,7 +16,6 @@
         : 0),
     0,
   );
-
   $: {
     isRunning && !$paused && updateTimer();
   }
@@ -39,8 +30,19 @@
       '') ||
     '';
   function updateTimer(): void {
-    if (!$timers[id]) return;
-    $timers[id].duration = new Date().getTime() - $timers[id].started_at.getTime();
+    if ($timers[id]) {
+      $timers[id].duration = new Date().getTime() - $timers[id].started_at.getTime();
+    } else {
+      const [lastLog] = item.Logs.slice(-1);
+      const needsResume = lastLog?.id && !lastLog.stopped_at && isRunning && !$paused;
+      if (needsResume) {
+        $timers[id] = {
+          started_at: lastLog.started_at,
+          sessionOffset: 0,
+          duration: 0,
+        };
+      }
+    }
     if (isRunning && !$paused && browser) {
       requestAnimationFrame(updateTimer);
     }

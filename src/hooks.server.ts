@@ -1,8 +1,12 @@
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import { createServerClient } from '@supabase/ssr';
 import type { Handle } from '@sveltejs/kit';
+import { sequence } from '@sveltejs/kit/hooks';
+import { createContext } from '$lib/trpc/context';
+import { router } from '$lib/trpc/router';
+import { createTRPCHandle } from 'trpc-sveltekit';
 
-export const handle: Handle = async ({ event, resolve }) => {
+const handleSupabase: Handle = async ({ event, resolve }) => {
   event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
       get: key => event.cookies.get(key),
@@ -47,3 +51,5 @@ export const handle: Handle = async ({ event, resolve }) => {
     },
   });
 };
+
+export const handle = sequence(handleSupabase, createTRPCHandle({ router, createContext }));

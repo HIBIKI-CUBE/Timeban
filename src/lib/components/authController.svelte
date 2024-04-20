@@ -10,11 +10,6 @@
   $: ({ supabase, session } = data);
 
   let ownerPromise = (async () => (await supabase.auth.getUser()).data.user?.id)();
-  const handleSignIn = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-    });
-  };
 
   const handleSignOut = async () => {
     $communicating = true;
@@ -26,7 +21,7 @@
 
   async function handleSignInWithGoogle(response) {
     $communicating = true;
-    const { data, error } = await supabase.auth.signInWithIdToken({
+    await supabase.auth.signInWithIdToken({
       provider: 'google',
       token: response.credential,
       nonce: 'NONCE', // must be the same one as provided in data-nonce (if any)

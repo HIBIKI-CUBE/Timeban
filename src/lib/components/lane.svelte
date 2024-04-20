@@ -1,8 +1,21 @@
 <script lang="ts">
-  import { enhance } from '$app/forms';
+  import { page } from '$app/stores';
+  import { trpc } from '$lib/trpc/client';
+  import { invalidateAll } from '$app/navigation';
   import type { Lanes, Items, Logs } from '@prisma/client';
 
-  export let lane: Lanes & { Items: (Items & { Logs: Logs[] })[] } & Lanes;
+  let newItemName = '';
+  const createItem = async () => {
+    await trpc($page).item.create.mutate({
+      name: newItemName,
+      laneId: lane.id,
+      runsTimer: lane.runsTimer,
+    });
+    newItemName = '';
+    invalidateAll();
+  };
+
+  export let lane: Lanes & { Items: (Items & { Logs: Logs[] })[] };
 </script>
 
 <div class="lane">
@@ -12,10 +25,8 @@
   {#if lane.Items}
     <slot />
   {/if}
-  <form action="?/createItem" method="post" use:enhance>
-    <input type="text" name="name" required />
-    <input type="hidden" name="lane" value={lane.id} />
-    <input type="hidden" name="runsTimer" value={lane.runsTimer} />
+  <form on:submit|preventDefault={createItem}>
+    <input type="text" name="name" required bind:value={newItemName} />
     <input type="submit" value="追加" />
   </form>
 </div>

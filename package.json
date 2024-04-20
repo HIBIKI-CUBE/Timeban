@@ -46,7 +46,8 @@
     "typescript": "^5.0.0",
     "vite": "^5.0.3",
     "vite-plugin-mkcert": "^1.17.5",
-    "vitest": "^1.2.0"
+    "vitest": "^1.2.0",
+    "zod": "^3.22.4"
   },
   "type": "module",
   "dependencies": {
@@ -54,10 +55,13 @@
     "@supabase/auth-ui-svelte": "^0.2.9",
     "@supabase/ssr": "^0.1.0",
     "@supabase/supabase-js": "^2.39.7",
+    "@trpc/client": "^10.45.2",
+    "@trpc/server": "^10.45.2",
     "@types/google-one-tap": "^1.2.6",
     "@types/google.accounts": "^0.0.14",
     "@vercel/analytics": "^1.2.2",
     "@vercel/speed-insights": "^1.0.10",
-    "svelte-html-event": "^0.0.6"
+    "svelte-html-event": "^0.0.6",
+    "trpc-sveltekit": "^3.6.1"
   }
 }

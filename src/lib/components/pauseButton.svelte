@@ -1,10 +1,12 @@
 <script lang="ts">
   import { paused } from '$lib/paused';
-  import { PauseSolid } from 'svelte-awesome-icons';
-  import { PlaySolid } from 'svelte-awesome-icons';
+  import PauseSolid from 'svelte-awesome-icons/PauseSolid.svelte';
+  import PlaySolid from 'svelte-awesome-icons/PlaySolid.svelte';
   import type { Boards, Items } from '@prisma/client';
   import { communicating } from '$lib/communicating';
   import { timers } from '$lib/timers';
+  import { page } from '$app/stores';
+  import { trpc } from '$lib/trpc/client';
 
   export let items: Items[] = [];
   export let board: Boards;
@@ -12,37 +14,31 @@
   async function togglePause() {
     $paused = !$paused;
     $communicating = true;
-    const data = new FormData();
-    data.append('id', String(board.id));
-    data.append('paused', $paused ? 'paused' : 'resumed');
-    fetch('?/updatePause', {
-      method: 'POST',
-      body: data,
+    await trpc($page).board.masterTimer.mutate({
+      boardId: board.id,
+      paused: $paused,
     });
     await Promise.all(
       items.map(async item => {
-        const itemId = Number(item.id);
         if ($paused) {
-          if ($timers[itemId]) {
-            $timers[itemId].sessionOffset += $timers[itemId].duration;
-            $timers[itemId].duration = 0;
+          if ($timers[item.id]) {
+            $timers[item.id].sessionOffset += $timers[item.id].duration;
+            $timers[item.id].duration = 0;
           }
         } else {
-          if (!$timers[itemId]) {
-            $timers[itemId] = {
+          if (!$timers[item.id]) {
+            $timers[item.id] = {
               started_at: new Date(),
               sessionOffset: 0,
               duration: 0,
             };
           }
-          $timers[itemId].started_at = new Date();
+          $timers[item.id].started_at = new Date();
         }
-        const data = new FormData();
-        data.append('id', String(itemId));
-        data.append('timerControl', $paused ? 'stop' : 'start');
-        fetch('?/updateItem', {
-          method: 'POST',
-          body: data,
+
+        await trpc($page).item.update.mutate({
+          itemId: item.id,
+          runsTimer: !$paused,
         });
       }),
     );
@@ -70,16 +66,16 @@
     border: none;
     background-color: #4aff6a;
     color: #000;
-    &.paused{
+    &.paused {
       background-color: #ff4b4b;
       animation: blink 1s ease infinite;
     }
   }
-  @keyframes blink{
-    from{
+  @keyframes blink {
+    from {
       opacity: 1;
     }
-    to{
+    to {
       opacity: 0.5;
     }
   }
