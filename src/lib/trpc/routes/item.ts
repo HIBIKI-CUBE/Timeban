@@ -3,28 +3,26 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import prisma from '$lib/server/prisma';
 import { getOwnerOrForbidden } from '../getOwnerOrForbidden';
+import { itemSchema } from '$lib/schemas/item';
+import { laneSchema } from '$lib/schemas/lane';
+
+export const itemInput = {
+  create: z.object({
+    name: itemSchema.name,
+    laneId: laneSchema.id,
+    runsTimer: z.boolean().optional().default(false),
+  }),
+  update: z.object({
+    itemId: itemSchema.id,
+    laneId: laneSchema.id.optional(),
+    row: itemSchema.row.optional(),
+    runsTimer: z.boolean().optional(),
+  }),
+};
 
 export const item = api.router({
   create: api.procedure
-    .input(
-      z.object({
-        name: z.string({
-          required_error: 'Item name is missing',
-          invalid_type_error: 'Item name must be a string',
-          description: 'Item name',
-        }),
-        laneId: z
-          .number({
-            required_error: 'Lane id is missing',
-            invalid_type_error: 'Lane id must be a number',
-            description: 'Lane id',
-          })
-          .int()
-          .positive()
-          .safe(),
-        runsTimer: z.boolean().optional().default(false),
-      }),
-    )
+    .input(itemInput.create)
     .mutation(async ({ ctx: { event }, input: { name, laneId, runsTimer } }) => {
       const owner = await getOwnerOrForbidden(event);
       const lane = await prisma.lanes
@@ -50,40 +48,7 @@ export const item = api.router({
       });
     }),
   update: api.procedure
-    .input(
-      z.object({
-        itemId: z
-          .number({
-            required_error: 'Item id is missing',
-            invalid_type_error: 'Item id must be a number',
-            description: 'Item id',
-          })
-          .int()
-          .positive()
-          .safe(),
-        laneId: z
-          .number({
-            required_error: 'Lane id is missing',
-            invalid_type_error: 'Lane id must be a number',
-            description: 'Lane id',
-          })
-          .int()
-          .positive()
-          .safe()
-          .optional(),
-        row: z
-          .number({
-            required_error: 'Row number is missing',
-            invalid_type_error: 'Row number must be a number',
-            description: 'Row number',
-          })
-          .int()
-          .nonnegative()
-          .safe()
-          .optional(),
-        runsTimer: z.boolean().optional(),
-      }),
-    )
+    .input(itemInput.update)
     .mutation(async ({ ctx: { event }, input: { itemId, laneId, row, runsTimer } }) => {
       const owner = await getOwnerOrForbidden(event);
       const item = await prisma.items
