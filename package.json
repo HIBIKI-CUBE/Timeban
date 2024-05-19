@@ -30,7 +30,7 @@
     "@vitejs/plugin-basic-ssl": "^1.1.0",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-svelte": "^2.35.1",
+    "eslint-plugin-svelte": "^2.39.0",
     "prettier": "^3.1.1",
     "prettier-plugin-svelte": "^3.1.2",
     "prisma": "^5.10.2",
@@ -59,8 +59,6 @@
     "@trpc/server": "^10.45.2",
     "@types/google-one-tap": "^1.2.6",
     "@types/google.accounts": "^0.0.14",
-    "@vercel/analytics": "^1.2.2",
-    "@vercel/speed-insights": "^1.0.10",
     "svelte-html-event": "^0.0.6",
     "trpc-sveltekit": "^3.6.1"
   }
