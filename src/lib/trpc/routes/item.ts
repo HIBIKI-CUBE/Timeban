@@ -37,7 +37,7 @@ export const item = api.router({
         .catch(() => {
           throw new TRPCError({ code: 'FORBIDDEN' });
         });
-      await prisma.items.create({
+      return await prisma.items.create({
         data: {
           name,
           lane: lane.id,
@@ -47,6 +47,25 @@ export const item = api.router({
         },
       });
     }),
+  get: api.procedure.input(itemSchema.id).query(async ({ ctx: { event }, input }) => {
+    const owner = await getOwnerOrForbidden(event);
+    const item = await prisma.items
+      .findUniqueOrThrow({
+        where: {
+          id: input,
+          Lanes: {
+            Boards: {
+              owner: owner,
+            },
+          },
+        },
+      })
+      .catch(() => {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      });
+
+    return { item };
+  }),
   update: api.procedure
     .input(itemInput.update)
     .mutation(async ({ ctx: { event }, input: { itemId, laneId, row, runsTimer } }) => {

@@ -1,27 +1,27 @@
 <script lang="ts">
-  import { communicating } from '$lib/communicating';
+  import { communication } from '$lib/globalStates.svelte';
   import type { PageData } from './$types';
-  import { afterUpdate } from 'svelte';
   import { page } from '$app/stores';
   import { trpc } from '$lib/trpc/client';
   import { invalidateAll } from '$app/navigation';
 
-  export let data: PageData;
+  interface Props {
+    data: PageData;
+  }
 
-  let { boards, supabase } = data;
-  $: ({ boards, supabase } = data);
-  $: ownerPromise = (async () => (await supabase.auth.getUser()).data.user?.id)();
+  let { data }: Props = $props();
 
-  let boardName = '';
+  let { boards, supabase } = $state(data);
+  const ownerPromise = (async () => (await supabase.auth.getUser()).data.user?.id)();
+
+  let boardName = $state('');
   const createBoard = async () => {
     await trpc($page).board.create.mutate(boardName);
     boardName = '';
     invalidateAll();
   };
 
-  afterUpdate(() => {
-    $communicating = false;
-  });
+  $effect(communication().finish);
 </script>
 
 {#await ownerPromise then owner}
@@ -33,7 +33,13 @@
         </a>
       {/each}
     {/if}
-    <form on:submit|preventDefault={createBoard}>
+    <form
+      onsubmit={event => {
+        event.preventDefault();
+
+        createBoard();
+      }}
+    >
       <label for="name">ボードを作成</label>
       <input type="text" name="name" required bind:value={boardName} />
       <input type="submit" value="作成" />

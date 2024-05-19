@@ -6,12 +6,15 @@
   import type { PageData } from '../routes/$types';
   import { invalidate } from '$app/navigation';
   import { navigating } from '$app/stores';
-  import { communicating } from '$lib/communicating';
+  import { communication } from '$lib/globalStates.svelte';
+  interface Props {
+    data: PageData;
+    children?: import('svelte').Snippet;
+  }
 
-  export let data: PageData;
+  let { data, children }: Props = $props();
 
-  let { supabase, session } = data;
-  $: ({ supabase, session } = data);
+  let { supabase, session } = $state(data);
 
   onMount(() => {
     const {
@@ -26,7 +29,7 @@
   });
 
   function beforeUnload(e: SvelteHTMLElementEvent<'svelte:window', 'on:beforeunload'>) {
-    if ($communicating) {
+    if (communication().isInProgress) {
       e.preventDefault();
       e.returnValue = '';
       return '';
@@ -35,10 +38,16 @@
 </script>
 
 <AuthController {data} />
-<img class="indicator {$navigating || $communicating ? 'loading' : ''}" src="logoAnim.svg" alt="" />
+<img
+  class="indicator {$navigating || communication().isInProgress ? 'loading' : ''}"
+  src="logoAnim.svg"
+  alt=""
+/>
 
-<svelte:window on:beforeunload={beforeUnload} />
-<slot />
+<svelte:window onbeforeunload={beforeUnload} />
+{#if children}
+  {@render children()}
+{/if}
 
 <style lang="scss">
   :global(body) {

@@ -1,49 +1,53 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import type { Items, Logs } from '@prisma/client';
-  import { timers } from '$lib/timers';
-  import { paused } from '$lib/paused';
+  import { masterTimer, timer } from '$lib/globalStates.svelte';
 
-  export let isRunning = false;
-  export let item: { Logs: Logs[] } & Items;
+  interface Props {
+    isRunning?: boolean;
+    item: { Logs: Logs[] } & Items;
+  }
+
+  let { isRunning = false, item }: Props = $props();
   const { id } = item;
 
-  const logSum = item.Logs.reduce(
-    (sum, log) =>
-      sum +
-      (log.started_at && log.stopped_at
-        ? log.stopped_at?.getTime() - log.started_at?.getTime()
-        : 0),
-    0,
-  );
-  $: {
-    isRunning && !$paused && updateTimer();
-  }
-  $: formatted =
-    (new Date(
-      ((isRunning && !$paused && $timers[id]?.duration) || 0) +
-        logSum +
-        ($timers[id]?.sessionOffset || 0),
-    )
-      .toUTCString()
-      .match(/..:..:../)?.[0] ??
-      '') ||
-    '';
+  $effect(() => {
+    if (isRunning && masterTimer().isRunning) {
+      updateTimer();
+    }
+  });
+
+  let formatted = $derived.by(() => {
+    const logSum = item.Logs?.reduce(
+      (sum, log) =>
+        sum +
+        (log.started_at && log.stopped_at
+          ? log.stopped_at.getTime() - log.started_at.getTime()
+          : 0),
+      0,
+    ) ?? 0;
+
+    const duration =
+      ((isRunning && masterTimer().isRunning && timer(id).duration) || 0) +
+      logSum +
+      (timer(id).sessionOffset || 0);
+
+    return new Date(duration).toUTCString().match(/..:..:../)?.[0] || '';
+  });
+
   function updateTimer(): void {
-    if ($timers[id]) {
-      $timers[id].duration = new Date().getTime() - $timers[id].started_at.getTime();
-    } else {
+    timer(id).updateIfExists();
+
+    if (!timer(id).exists && item.Logs?.length > 0) {
       const [lastLog] = item.Logs.slice(-1);
-      const needsResume = lastLog?.id && !lastLog.stopped_at && isRunning && !$paused;
+      const needsResume =
+        lastLog?.id && !lastLog.stopped_at && isRunning && masterTimer().isRunning;
       if (needsResume) {
-        $timers[id] = {
-          started_at: lastLog.started_at,
-          sessionOffset: 0,
-          duration: 0,
-        };
+        timer(id).resumeOrCreate(lastLog.started_at);
       }
     }
-    if (isRunning && !$paused && browser) {
+
+    if (isRunning && masterTimer().isRunning && browser) {
       requestAnimationFrame(updateTimer);
     }
   }

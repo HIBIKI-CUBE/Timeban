@@ -1,31 +1,47 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { trpc } from '$lib/trpc/client';
-  import { invalidateAll } from '$app/navigation';
   import type { Lanes, Items, Logs } from '@prisma/client';
+  import { timer, communication } from '$lib/globalStates.svelte';
 
-  let newItemName = '';
+  interface Props {
+    lane: Lanes & { Items: (Items & { Logs?: Logs[] })[] };
+    children?: import('svelte').Snippet;
+  }
+
+  let { lane, children }: Props = $props();
+
+  let newItemName = $state('');
   const createItem = async () => {
-    await trpc($page).item.create.mutate({
+    communication().start();
+    const { id } = await trpc($page).item.create.mutate({
       name: newItemName,
       laneId: lane.id,
       runsTimer: lane.runsTimer,
     });
+    if (lane.runsTimer) {
+      timer(id).resumeOrCreate();
+    }
     newItemName = '';
-    invalidateAll();
+    const { item } = await trpc($page).item.get.query(id);
+    lane.Items.push({ item });
+    communication().finish();
   };
-
-  export let lane: Lanes & { Items: (Items & { Logs: Logs[] })[] };
 </script>
 
 <div class="lane">
   <h2 class="title">
     {lane.name}
   </h2>
-  {#if lane.Items}
-    <slot />
+  {#if lane.Items && children}
+    {@render children()}
   {/if}
-  <form on:submit|preventDefault={createItem}>
+  <form
+    onsubmit={event => {
+      event.preventDefault();
+      createItem();
+    }}
+  >
     <input type="text" name="name" required bind:value={newItemName} />
     <input type="submit" value="追加" />
   </form>
