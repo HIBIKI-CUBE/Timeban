@@ -11,19 +11,21 @@ export const itemInput = {
     name: itemSchema.name,
     laneId: laneSchema.id,
     runsTimer: z.boolean().optional().default(false),
+    estimateMinutes: itemSchema.estimateMinutes,
   }),
   update: z.object({
     itemId: itemSchema.id,
     laneId: laneSchema.id.optional(),
     row: itemSchema.row.optional(),
     runsTimer: z.boolean().optional(),
+    estimateMinutes: itemSchema.estimateMinutes,
   }),
 };
 
 export const item = api.router({
   create: api.procedure
     .input(itemInput.create)
-    .mutation(async ({ ctx: { event }, input: { name, laneId, runsTimer } }) => {
+    .mutation(async ({ ctx: { event }, input: { name, laneId, runsTimer, estimateMinutes = 0 } }) => {
       const owner = await getOwnerOrForbidden(event);
       const lane = await prisma.lanes
         .findUniqueOrThrow({
@@ -41,6 +43,7 @@ export const item = api.router({
         data: {
           name,
           lane: lane.id,
+          estimate_minutes: estimateMinutes,
           Logs: {
             create: runsTimer ? [{}] : [],
           },

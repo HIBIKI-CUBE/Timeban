@@ -24,4 +24,12 @@ export const itemSchema = {
     .int()
     .nonnegative()
     .safe(),
+  estimateMinutes: z
+    .number({
+      required_error: 'Estimate minutes is missing',
+      invalid_type_error: 'Estimate minutes must be a number',
+      description: 'Estimate minutes',
+    })
+    .nonnegative()
+    .safe(),
 };

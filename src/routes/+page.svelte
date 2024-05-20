@@ -21,7 +21,7 @@
     invalidateAll();
   };
 
-  $effect(communication().finish);
+  // $effect(communication().finish);
 </script>
 
 {#await ownerPromise then owner}
