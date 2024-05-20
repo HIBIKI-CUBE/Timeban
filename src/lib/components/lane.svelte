@@ -12,19 +12,21 @@
   let { lane, children }: Props = $props();
 
   let newItemName = $state('');
+  let newItemEstimate: number | undefined = $state();
   const createItem = async () => {
     communication().start();
     const { id } = await trpc($page).item.create.mutate({
       name: newItemName,
       laneId: lane.id,
       runsTimer: lane.runsTimer,
+      estimateMinutes: newItemEstimate ?? 0,
     });
     if (lane.runsTimer) {
       timer(id).resumeOrCreate();
     }
     newItemName = '';
     const { item } = await trpc($page).item.get.query(id);
-    lane.Items.push({ item });
+    lane.Items.push(item);
     communication().finish();
   };
 </script>
@@ -42,7 +44,10 @@
       createItem();
     }}
   >
-    <input type="text" name="name" required bind:value={newItemName} />
+    <div class="inputs">
+      <input type="text" name="name" placeholder="" required bind:value={newItemName} />
+      <input type="number" name="estimate" placeholder="見積もり(分)" bind:value={newItemEstimate} />
+    </div>
     <input type="submit" value="追加" />
   </form>
 </div>
@@ -72,25 +77,42 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    display: flex;
     border-radius: 0 0 1ch 1ch;
     overflow: hidden;
-    height: 2em;
-    input[type='text'] {
-      outline: none;
-      border: none;
-      box-sizing: border-box;
-      margin: 0;
-      width: 100%;
-      padding: 0 1.5ch;
+
+    $base-height: 30px;
+    .inputs {
+      transform: translateY($base-height);
+      transition: transform .5s cubic-bezier(0.87, 0, 0.13, 1);
+      &:has(input:focus){
+        transform: translateY(0);
+      }
+      input {
+        outline: none;
+        border: none;
+        box-sizing: border-box;
+        margin: 0;
+        width: 100%;
+        height: $base-height;
+        padding: 0 1.5ch;
+        &:last-child{
+          width: 70%;
+        }
+      }
     }
     input[type='submit'] {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      outline: none;
       border: none;
       box-sizing: border-box;
       background-color: #fd0;
       font-weight: bold;
       margin: 0;
-      width: 15ch;
+      max-width: 10ch;
+      width: 30%;
+      height: $base-height;
       color: #000;
     }
   }

@@ -17,8 +17,8 @@
     }
   });
 
-  let formatted = $derived.by(() => {
-    const logSum = item.Logs?.reduce(
+  const logSum =
+    item.Logs?.reduce(
       (sum, log) =>
         sum +
         (log.started_at && log.stopped_at
@@ -27,12 +27,22 @@
       0,
     ) ?? 0;
 
-    const duration =
-      ((isRunning && masterTimer().isRunning && timer(id).duration) || 0) +
+  const duration = $derived(
+    ((isRunning && masterTimer().isRunning && timer(id).duration) || 0) +
       logSum +
-      (timer(id).sessionOffset || 0);
+      (timer(id).sessionOffset || 0),
+  );
 
-    return new Date(duration).toUTCString().match(/..:..:../)?.[0] || '';
+  const formatted = $derived(new Date(duration).toUTCString().match(/..:..:../)?.[0] || '');
+
+  const estimateMs = item.estimate_minutes * 60 * 1000;
+
+  const estimateMinutesFormatted = new Date(estimateMs).toUTCString().match(/..:..:../)?.[0] || '';
+
+  const finishAt = $derived.by(() => {
+    const now = new Date;
+    const finishAt = new Date(now.getTime() + estimateMs - duration);
+    return finishAt.toUTCString().match(/..:..:../)?.[0] || ''
   });
 
   function updateTimer(): void {
@@ -53,13 +63,22 @@
   }
 </script>
 
-<div class="card">
+<div class="card" title="{finishAt}">
   <div class="name">
     {item.name}
   </div>
   <div class="timer">
     {formatted}
+    {#if estimateMs > 0}
+      / {estimateMinutesFormatted}
+    {/if}
   </div>
+  {#if estimateMs > 0}
+    <div
+      class="gauge {duration > estimateMs ? 'over' : ''}"
+      style="width: {duration / estimateMs * 100}%;"
+    ></div>
+  {/if}
 </div>
 
 <style lang="scss">
@@ -69,5 +88,19 @@
     padding: 1ch 0.5em 1ch;
     border-radius: 1ch;
     margin-bottom: 0.5em;
+    position: relative;
+    overflow: hidden;
+
+    .gauge {
+      position: absolute;
+      background-color: #fd0;
+      bottom: 0;
+      left: 0;
+      height: 0.5ch;
+      max-width: 100%;
+      &.over {
+        background-color: #f20;
+      }
+    }
   }
 </style>
