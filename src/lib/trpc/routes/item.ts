@@ -18,7 +18,6 @@ export const itemInput = {
     laneId: laneSchema.id.optional(),
     row: itemSchema.row.optional(),
     runsTimer: z.boolean().optional(),
-    estimateMinutes: itemSchema.estimateMinutes,
   }),
 };
 
