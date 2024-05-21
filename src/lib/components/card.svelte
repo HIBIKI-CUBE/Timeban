@@ -39,6 +39,8 @@
 
   const estimateMinutesFormatted = new Date(estimateMs).toUTCString().match(/..:..:../)?.[0] || '';
 
+  const isInTime = $derived(estimateMs * 0.95 <= duration || duration <= estimateMs * 1.05);
+
   const finishAt = $derived.by(() => {
     const now = new Date;
     const finishAt = new Date(now.getTime() + estimateMs - duration);
@@ -75,7 +77,7 @@
   </div>
   {#if estimateMs > 0}
     <div
-      class="gauge {duration > estimateMs ? 'over' : ''}"
+      class="gauge {duration > estimateMs ? 'over' : ''} {isInTime? 'in-time' : ''}"
       style="width: {duration / estimateMs * 100}%;"
     ></div>
   {/if}
@@ -100,6 +102,9 @@
       max-width: 100%;
       &.over {
         background-color: #f20;
+      }
+      &.in-time {
+        background-color: #0f2;
       }
     }
   }
