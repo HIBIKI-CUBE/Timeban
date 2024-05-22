@@ -39,7 +39,7 @@
 
   const estimateMinutesFormatted = new Date(estimateMs).toUTCString().match(/..:..:../)?.[0] || '';
 
-  const isInTime = $derived(estimateMs * 0.95 <= duration || duration <= estimateMs * 1.05);
+  const isInTime = $derived(estimateMs * 0.95 <= duration && duration <= estimateMs * 1.05);
 
   const finishAt = $derived.by(() => {
     const now = new Date;
