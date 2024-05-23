@@ -11,20 +11,19 @@
 
   let { lane, children }: Props = $props();
 
-  let newItemName = $state('');
-  let newItemEstimate: number | undefined = $state();
+  let newItem: {name: string, estimateMinutes: number | undefined } = $state({ name: '', estimateMinutes: undefined });
   const createItem = async () => {
     communication().start();
     const { id } = await trpc($page).item.create.mutate({
-      name: newItemName,
+      name: newItem.name,
       laneId: lane.id,
       runsTimer: lane.runsTimer,
-      estimateMinutes: newItemEstimate ?? 0,
+      estimateMinutes: newItem.estimateMinutes ?? 0,
     });
     if (lane.runsTimer) {
       timer(id).resumeOrCreate();
     }
-    newItemName = '';
+    newItem = { name: '', estimateMinutes: undefined };
     const { item } = await trpc($page).item.get.query(id);
     lane.Items.push(item);
     communication().finish();
@@ -45,8 +44,8 @@
     }}
   >
     <div class="inputs">
-      <input type="text" name="name" placeholder="" required bind:value={newItemName} />
-      <input type="number" name="estimate" placeholder="見積もり(分)" bind:value={newItemEstimate} />
+      <input type="text" name="name" placeholder="" required bind:value={newItem.name} />
+      <input type="number" name="estimate" placeholder="見積もり(分)" bind:value={newItem.estimateMinutes} />
     </div>
     <input type="submit" value="追加" />
   </form>
