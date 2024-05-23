@@ -39,15 +39,15 @@
 
   const estimateMinutesFormatted = new Date(estimateMs).toUTCString().match(/..:..:../)?.[0] || '';
 
-  const isInTime = $derived.by( () => {
+  const isInTime = $derived.by(() => {
     const error = Math.max(3 * 60 * 1000, estimateMs * 0.05);
-    return estimateMs - error <= duration && duration <= estimateMs + error
+    return estimateMs - error <= duration && duration <= estimateMs + error;
   });
 
   const finishAt = $derived.by(() => {
-    const now = new Date;
+    const now = new Date();
     const finishAt = new Date(now.getTime() + estimateMs - duration);
-    return finishAt.toUTCString().match(/..:..:../)?.[0] || ''
+    return finishAt.toUTCString().match(/..:..:../)?.[0] || '';
   });
 
   function updateTimer(): void {
@@ -68,7 +68,7 @@
   }
 </script>
 
-<div class="card" title="{finishAt}">
+<div class="card" title={finishAt}>
   <div class="name">
     {item.name}
   </div>
@@ -80,8 +80,8 @@
   </div>
   {#if estimateMs > 0}
     <div
-      class="gauge {duration > estimateMs ? 'over' : ''} {isInTime? 'in-time' : ''}"
-      style="width: {duration / estimateMs * 100}%;"
+      class="gauge {duration > estimateMs ? 'over' : ''} {isInTime ? 'in-time' : ''}"
+      style="width: {(duration / estimateMs) * 100}%;"
     ></div>
   {/if}
 </div>

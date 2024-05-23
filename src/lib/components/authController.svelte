@@ -47,7 +47,7 @@
           itp_support: true,
         });
 
-        if(!oneTapButton) return;
+        if (!oneTapButton) return;
         GoogleAccountController.id.renderButton(oneTapButton, {
           theme: 'filled_blue',
           size: 'large',

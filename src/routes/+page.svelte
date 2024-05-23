@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { communication } from '$lib/globalStates.svelte';
   import type { PageData } from './$types';
   import { page } from '$app/stores';
   import { trpc } from '$lib/trpc/client';

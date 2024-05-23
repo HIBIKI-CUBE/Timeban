@@ -24,31 +24,33 @@ export const itemInput = {
 export const item = api.router({
   create: api.procedure
     .input(itemInput.create)
-    .mutation(async ({ ctx: { event }, input: { name, laneId, runsTimer, estimateMinutes = 0 } }) => {
-      const owner = await getOwnerOrForbidden(event);
-      const lane = await prisma.lanes
-        .findUniqueOrThrow({
-          where: {
-            id: laneId,
-            Boards: {
-              owner,
+    .mutation(
+      async ({ ctx: { event }, input: { name, laneId, runsTimer, estimateMinutes = 0 } }) => {
+        const owner = await getOwnerOrForbidden(event);
+        const lane = await prisma.lanes
+          .findUniqueOrThrow({
+            where: {
+              id: laneId,
+              Boards: {
+                owner,
+              },
+            },
+          })
+          .catch(() => {
+            throw new TRPCError({ code: 'FORBIDDEN' });
+          });
+        return await prisma.items.create({
+          data: {
+            name,
+            lane: lane.id,
+            estimate_minutes: estimateMinutes,
+            Logs: {
+              create: runsTimer ? [{}] : [],
             },
           },
-        })
-        .catch(() => {
-          throw new TRPCError({ code: 'FORBIDDEN' });
         });
-      return await prisma.items.create({
-        data: {
-          name,
-          lane: lane.id,
-          estimate_minutes: estimateMinutes,
-          Logs: {
-            create: runsTimer ? [{}] : [],
-          },
-        },
-      });
-    }),
+      },
+    ),
   get: api.procedure.input(itemSchema.id).query(async ({ ctx: { event }, input }) => {
     const owner = await getOwnerOrForbidden(event);
     const item = await prisma.items

@@ -9,7 +9,7 @@ export const load: PageServerLoad = async event => {
 
   return await createCaller(await createContext(event))
     .board.list()
-    .catch((err:unknown) => {
+    .catch((err: unknown) => {
       error(404, `Not found: ${err instanceof Error ? err.message : ''}`);
     });
 };

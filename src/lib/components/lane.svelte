@@ -113,8 +113,8 @@
     $base-height: 30px;
     .inputs {
       transform: translateY($base-height);
-      transition: transform .5s cubic-bezier(0.87, 0, 0.13, 1);
-      &:has(input:focus){
+      transition: transform 0.5s cubic-bezier(0.87, 0, 0.13, 1);
+      &:has(input:focus) {
         transform: translateY(0);
       }
       input {
@@ -125,7 +125,7 @@
         width: 100%;
         height: $base-height;
         padding: 0 1.5ch;
-        &:last-child{
+        &:last-child {
           width: 70%;
         }
       }

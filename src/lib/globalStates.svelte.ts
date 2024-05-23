@@ -56,7 +56,7 @@ interface Timer {
   sessionOffset: number;
 }
 
-let timers: Timer[] = $state([]);
+const timers: Timer[] = $state([]);
 
 export function timer(index: number) {
   function resumeOrCreate(started_at: Date = new Date()) {

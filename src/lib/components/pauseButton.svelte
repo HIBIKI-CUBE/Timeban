@@ -6,7 +6,10 @@
   import { page } from '$app/stores';
   import { trpc } from '$lib/trpc/client';
 
-  interface Props { items?: Items[], board: Boards }
+  interface Props {
+    items?: Items[];
+    board: Boards;
+  }
 
   let { items = [], board }: Props = $props();
 
