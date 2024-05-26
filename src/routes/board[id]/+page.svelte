@@ -9,7 +9,7 @@
   import { masterTimer } from '$lib/globalStates.svelte';
   import { page } from '$app/stores';
   import { trpc } from '$lib/trpc/client';
-  import type { Items, Logs } from '@prisma/client';
+  import type { Lanes,Items, Logs } from '@prisma/client';
 
   interface Props {
     data: PageData;
@@ -84,7 +84,7 @@
     newLaneName = '';
     newLaneRunsTimer = false;
     const { lane } = await trpc($page).lane.get.query(id);
-    board.Lanes.push({ lane });
+    board.Lanes.push(lane );
     communication().finish();
   };
 </script>
