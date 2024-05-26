@@ -9,7 +9,8 @@
   import { masterTimer } from '$lib/globalStates.svelte';
   import { page } from '$app/stores';
   import { trpc } from '$lib/trpc/client';
-  import type { Lanes,Items, Logs } from '@prisma/client';
+  import type { Lanes, Items, Logs } from '@prisma/client';
+  import TrashCanSolid from 'svelte-awesome-icons/TrashCanSolid.svelte';
 
   interface Props {
     data: PageData;
@@ -23,6 +24,8 @@
 
   board?.paused ? masterTimer().pause() : masterTimer().resume();
 
+  let dragging = $state(false);
+
   export const DndConsider = (
     e: CustomEvent<DndEvent<Items & { Logs: Logs[] }>>,
     laneId: number,
@@ -34,6 +37,7 @@
       !board?.Lanes[targetLaneIndex].Items
     )
       return;
+    dragging = true;
     board.Lanes[targetLaneIndex].Items = e.detail.items;
   };
   export const DndFinalize = async (
@@ -44,6 +48,7 @@
     if (targetLaneIndex === -1) return;
     board.Lanes[targetLaneIndex].Items = e.detail.items;
     if (e.detail.info.trigger === 'droppedIntoZone') {
+      dragging = false;
       await Promise.all(
         e.detail.items.map((item, i) => {
           if (
@@ -72,6 +77,17 @@
     }
   };
 
+  const DndDispose = async (e: CustomEvent<DndEvent<Items & { Logs: Logs[] }>>): Promise<void> => {
+    if (e.detail.info.trigger === 'droppedIntoZone') {
+      dragging = false;
+      communication().start();
+      await trpc($page).item.delete.mutate({
+        itemId: Number(e.detail.info.id),
+      });
+      communication().finish();
+    }
+  };
+
   let newLaneName = $state(''),
     newLaneRunsTimer = $state(false);
   const createLane = async () => {
@@ -84,7 +100,7 @@
     newLaneName = '';
     newLaneRunsTimer = false;
     const { lane } = await trpc($page).lane.get.query(id);
-    board.Lanes.push(lane );
+    board.Lanes.push(lane);
     communication().finish();
   };
 </script>
@@ -95,6 +111,20 @@
       <h1>
         {board?.name}
       </h1>
+      <div
+        class="disposer"
+        class:dragging
+        use:dndzone={{
+          items: board?.Lanes.flatMap(lane => lane.Items),
+          flipDurationMs,
+        }}
+        onconsider={() => {}}
+        onfinalize={e => {
+          DndDispose(e);
+        }}
+      >
+        <TrashCanSolid />
+      </div>
       <PauseButton
         items={board?.Lanes.filter(lane => lane.runsTimer)
           .map(lane => lane.Items)
@@ -154,8 +184,24 @@
     justify-content: space-between;
     align-items: center;
     padding: 1em 0;
+    gap: 1em;
     h1 {
       margin: 0;
+    }
+  }
+  .disposer {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 2.5em;
+    background-color: #ccc;
+    border: dashed 2px #000;
+    box-sizing: border-box;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    border-radius: 1ch;
+    &.dragging {
+      opacity: 1;
     }
   }
   .lanes {

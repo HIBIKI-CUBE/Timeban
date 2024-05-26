@@ -19,6 +19,9 @@ export const itemInput = {
     row: itemSchema.row.optional(),
     runsTimer: z.boolean().optional(),
   }),
+  delete: z.object({
+    itemId: itemSchema.id,
+  }),
 };
 
 export const item = api.router({
@@ -145,5 +148,24 @@ export const item = api.router({
           });
         }
       }
+    }),
+  delete: api.procedure
+    .input(itemInput.delete)
+    .mutation(async ({ ctx: { event }, input: { itemId } }) => {
+      const owner = await getOwnerOrForbidden(event);
+      await prisma.items
+        .delete({
+          where: {
+            id: itemId,
+            Lanes: {
+              Boards: {
+                owner,
+              },
+            },
+          },
+        })
+        .catch(() => {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Item not found' });
+        });
     }),
 });
