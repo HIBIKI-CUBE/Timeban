@@ -43,5 +43,7 @@
       <input type="text" name="name" required bind:value={boardName} />
       <input type="submit" value="作成" />
     </form>
+  {:else}
+    ログインしてください。
   {/if}
 {/await}

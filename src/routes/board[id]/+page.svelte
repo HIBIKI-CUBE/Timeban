@@ -45,7 +45,7 @@
     laneId: number,
   ) => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
-    if (targetLaneIndex === -1) return;
+    if (targetLaneIndex === undefined || targetLaneIndex === -1 || !board) return;
     board.Lanes[targetLaneIndex].Items = e.detail.items;
     if (e.detail.info.trigger === 'droppedIntoZone') {
       dragging = false;
@@ -91,6 +91,7 @@
   let newLaneName = $state(''),
     newLaneRunsTimer = $state(false);
   const createLane = async () => {
+    if (!board) return;
     communication().start();
     const { id } = await trpc($page).lane.create.mutate({
       name: newLaneName,

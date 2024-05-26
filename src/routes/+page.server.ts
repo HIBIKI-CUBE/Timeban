@@ -7,6 +7,8 @@ export const load: PageServerLoad = async event => {
   const { depends } = event;
   depends('supabase:auth');
 
+  if (!(await event.locals.safeGetSession()).user?.id) return;
+
   return await createCaller(await createContext(event))
     .board.list()
     .catch((err: unknown) => {
