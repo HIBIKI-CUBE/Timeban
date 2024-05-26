@@ -60,6 +60,7 @@
     border: none;
     background-color: #4aff6a;
     color: #000;
+    flex-shrink: 0;
     &.paused {
       background-color: #ff4b4b;
       animation: blink 1s ease infinite;
