@@ -311,6 +311,7 @@ model Items {
   lane             Int
   row              Int?
   estimate_minutes Int       @default(0)
+  deleted          Boolean   @default(false)
   Lanes            Lanes     @relation(fields: [lane], references: [id], onDelete: Cascade, map: "public_Items_lane_fkey")
   Logs             Logs[]
 

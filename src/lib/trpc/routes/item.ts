@@ -154,7 +154,7 @@ export const item = api.router({
     .mutation(async ({ ctx: { event }, input: { itemId } }) => {
       const owner = await getOwnerOrForbidden(event);
       await prisma.items
-        .delete({
+        .update({
           where: {
             id: itemId,
             Lanes: {
@@ -163,6 +163,9 @@ export const item = api.router({
               },
             },
           },
+          data: {
+            deleted: true,
+          }
         })
         .catch(() => {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Item not found' });
