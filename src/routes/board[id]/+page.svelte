@@ -187,6 +187,7 @@
     gap: 1em;
     h1 {
       margin: 0;
+      flex-shrink: 0;
     }
   }
   .disposer {
