@@ -1,59 +1,63 @@
 <script lang="ts">
   import { goto, invalidateAll } from '$app/navigation';
-  import { communicating } from '$lib/communicating';
+  import { communication } from '$lib/globalStates.svelte';
   import type { PageData } from '../../routes/$types';
   import type { accounts } from 'google-one-tap';
-  import { onMount } from 'svelte';
 
-  export let data: PageData;
-  let { supabase, session } = data;
-  $: ({ supabase, session } = data);
+  interface Props {
+    data: PageData;
+  }
 
-  let ownerPromise = (async () => (await supabase.auth.getUser()).data.user?.id)();
+  let { data }: Props = $props();
+
+  let { supabase, session } = $state(data);
 
   const handleSignOut = async () => {
-    $communicating = true;
+    communication().start();
     await supabase.auth.signOut();
     await invalidateAll();
     await showGoogleOneTap();
     await goto('/', { invalidateAll: true });
+    communication().finish();
   };
 
   async function handleSignInWithGoogle(response) {
-    $communicating = true;
+    communication().start();
     await supabase.auth.signInWithIdToken({
       provider: 'google',
       token: response.credential,
       nonce: 'NONCE', // must be the same one as provided in data-nonce (if any)
     });
     await invalidateAll();
-    $communicating = false;
+    communication().finish();
   }
 
-  let oneTapButton: HTMLDivElement;
-  let GoogleAccountController: accounts | undefined;
+  let oneTapButton: HTMLDivElement | undefined = $state();
 
-  async function showGoogleOneTap() {
-    const owner = await ownerPromise;
-    if (owner) return;
-    GoogleAccountController = google?.accounts;
-    GoogleAccountController.id.initialize({
-      client_id: import.meta.env.VITE_DEV_GOOGLE_CLIENT_ID,
-      callback: handleSignInWithGoogle,
-      ux_mode: 'popup',
-      auto_select: true,
-      context: 'signin',
-      itp_support: true,
-    });
+  function showGoogleOneTap() {
+    supabase.auth.getUser().then(auth => {
+      if (!auth.data.user?.id) {
+        const GoogleAccountController = google?.accounts as accounts;
+        GoogleAccountController.id.initialize({
+          client_id: import.meta.env.VITE_DEV_GOOGLE_CLIENT_ID,
+          callback: handleSignInWithGoogle,
+          ux_mode: 'popup',
+          auto_select: true,
+          context: 'signin',
+          itp_support: true,
+        });
 
-    GoogleAccountController.id.renderButton(oneTapButton, {
-      theme: 'filled_blue',
-      size: 'large',
-      shape: 'circle',
+        if (!oneTapButton) return;
+        GoogleAccountController.id.renderButton(oneTapButton, {
+          theme: 'filled_blue',
+          size: 'large',
+          shape: 'circle',
+        });
+      }
     });
   }
 
-  onMount(showGoogleOneTap);
+  $effect(showGoogleOneTap);
 </script>
 
 <svelte:head>
@@ -76,7 +80,7 @@
         src={session.user.user_metadata.avatar_url}
         alt="アカウントのアイコン"
         title="クリックしてログアウト"
-        on:click={handleSignOut}
+        onclick={handleSignOut}
       />
     {/if}
   </div>

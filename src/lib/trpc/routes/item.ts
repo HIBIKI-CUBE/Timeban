@@ -11,6 +11,7 @@ export const itemInput = {
     name: itemSchema.name,
     laneId: laneSchema.id,
     runsTimer: z.boolean().optional().default(false),
+    estimateMinutes: itemSchema.estimateMinutes,
   }),
   update: z.object({
     itemId: itemSchema.id,
@@ -18,35 +19,60 @@ export const itemInput = {
     row: itemSchema.row.optional(),
     runsTimer: z.boolean().optional(),
   }),
+  delete: z.object({
+    itemId: itemSchema.id,
+  }),
 };
 
 export const item = api.router({
   create: api.procedure
     .input(itemInput.create)
-    .mutation(async ({ ctx: { event }, input: { name, laneId, runsTimer } }) => {
-      const owner = await getOwnerOrForbidden(event);
-      const lane = await prisma.lanes
-        .findUniqueOrThrow({
-          where: {
-            id: laneId,
-            Boards: {
-              owner,
+    .mutation(
+      async ({ ctx: { event }, input: { name, laneId, runsTimer, estimateMinutes = 0 } }) => {
+        const owner = await getOwnerOrForbidden(event);
+        const lane = await prisma.lanes
+          .findUniqueOrThrow({
+            where: {
+              id: laneId,
+              Boards: {
+                owner,
+              },
+            },
+          })
+          .catch(() => {
+            throw new TRPCError({ code: 'FORBIDDEN' });
+          });
+        return await prisma.items.create({
+          data: {
+            name,
+            lane: lane.id,
+            estimate_minutes: estimateMinutes,
+            Logs: {
+              create: runsTimer ? [{}] : [],
             },
           },
-        })
-        .catch(() => {
-          throw new TRPCError({ code: 'FORBIDDEN' });
         });
-      await prisma.items.create({
-        data: {
-          name,
-          lane: lane.id,
-          Logs: {
-            create: runsTimer ? [{}] : [],
+      },
+    ),
+  get: api.procedure.input(itemSchema.id).query(async ({ ctx: { event }, input }) => {
+    const owner = await getOwnerOrForbidden(event);
+    const item = await prisma.items
+      .findUniqueOrThrow({
+        where: {
+          id: input,
+          Lanes: {
+            Boards: {
+              owner: owner,
+            },
           },
         },
+      })
+      .catch(() => {
+        throw new TRPCError({ code: 'NOT_FOUND' });
       });
-    }),
+
+    return { item };
+  }),
   update: api.procedure
     .input(itemInput.update)
     .mutation(async ({ ctx: { event }, input: { itemId, laneId, row, runsTimer } }) => {
@@ -122,5 +148,27 @@ export const item = api.router({
           });
         }
       }
+    }),
+  delete: api.procedure
+    .input(itemInput.delete)
+    .mutation(async ({ ctx: { event }, input: { itemId } }) => {
+      const owner = await getOwnerOrForbidden(event);
+      await prisma.items
+        .update({
+          where: {
+            id: itemId,
+            Lanes: {
+              Boards: {
+                owner,
+              },
+            },
+          },
+          data: {
+            deleted: true,
+          }
+        })
+        .catch(() => {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Item not found' });
+        });
     }),
 });

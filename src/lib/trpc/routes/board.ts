@@ -47,6 +47,9 @@ export const board = api.router({
           Lanes: {
             include: {
               Items: {
+                where: {
+                  deleted: false,
+                },
                 include: {
                   Logs: {
                     orderBy: {

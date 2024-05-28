@@ -1,53 +1,47 @@
 <script lang="ts">
-  import { paused } from '$lib/paused';
   import PauseSolid from 'svelte-awesome-icons/PauseSolid.svelte';
   import PlaySolid from 'svelte-awesome-icons/PlaySolid.svelte';
   import type { Boards, Items } from '@prisma/client';
-  import { communicating } from '$lib/communicating';
-  import { timers } from '$lib/timers';
+  import { masterTimer, communication, timer } from '$lib/globalStates.svelte';
   import { page } from '$app/stores';
   import { trpc } from '$lib/trpc/client';
 
-  export let items: Items[] = [];
-  export let board: Boards;
+  interface Props {
+    items?: Items[];
+    board: Boards;
+  }
+
+  let { items = [], board }: Props = $props();
 
   async function togglePause() {
-    $paused = !$paused;
-    $communicating = true;
+    masterTimer().toggle();
+    communication().start();
     await trpc($page).board.masterTimer.mutate({
       boardId: board.id,
-      paused: $paused,
+      paused: masterTimer().isPaused,
     });
     await Promise.all(
       items.map(async item => {
-        if ($paused) {
-          if ($timers[item.id]) {
-            $timers[item.id].sessionOffset += $timers[item.id].duration;
-            $timers[item.id].duration = 0;
-          }
-        } else {
-          if (!$timers[item.id]) {
-            $timers[item.id] = {
-              started_at: new Date(),
-              sessionOffset: 0,
-              duration: 0,
-            };
-          }
-          $timers[item.id].started_at = new Date();
+        if (masterTimer().isPaused) {
+          timer(item.id).pauseIfExists();
+        }
+
+        if (masterTimer().isRunning) {
+          timer(item.id).resumeOrCreate();
         }
 
         await trpc($page).item.update.mutate({
           itemId: item.id,
-          runsTimer: !$paused,
+          runsTimer: masterTimer().isRunning,
         });
       }),
     );
-    $communicating = false;
+    communication().finish();
   }
 </script>
 
-<button type="button" class:paused={$paused} on:click={togglePause}>
-  {#if $paused}
+<button type="button" class:paused={masterTimer().isPaused} onclick={togglePause}>
+  {#if masterTimer().isPaused}
     <PlaySolid size="2em" />
   {:else}
     <PauseSolid size="2em" />
@@ -66,6 +60,7 @@
     border: none;
     background-color: #4aff6a;
     color: #000;
+    flex-shrink: 0;
     &.paused {
       background-color: #ff4b4b;
       animation: blink 1s ease infinite;

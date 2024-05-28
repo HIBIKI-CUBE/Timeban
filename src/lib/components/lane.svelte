@@ -1,32 +1,83 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { trpc } from '$lib/trpc/client';
-  import { invalidateAll } from '$app/navigation';
   import type { Lanes, Items, Logs } from '@prisma/client';
+  import { timer, communication } from '$lib/globalStates.svelte';
 
-  let newItemName = '';
+  interface Props {
+    lane: Lanes & { Items: (Items & { Logs?: Logs[] })[] };
+    children?: import('svelte').Snippet;
+  }
+
+  let { lane, children }: Props = $props();
+
+  interface newItemInput {
+    name: string;
+    estimateMinutes: number | undefined;
+    nameInput: HTMLInputElement | null;
+    estimateInput: HTMLInputElement | null;
+  }
+
+  let newItem: newItemInput = $state({
+    name: '',
+    estimateMinutes: undefined,
+    nameInput: null,
+    estimateInput: null,
+  });
   const createItem = async () => {
-    await trpc($page).item.create.mutate({
-      name: newItemName,
+    communication().start();
+    const { id } = await trpc($page).item.create.mutate({
+      name: newItem.name,
       laneId: lane.id,
       runsTimer: lane.runsTimer,
+      estimateMinutes: newItem.estimateMinutes ?? 0,
     });
-    newItemName = '';
-    invalidateAll();
+    if (lane.runsTimer) {
+      timer(id).resumeOrCreate();
+    }
+    newItem = {
+      ...newItem,
+      name: '',
+      estimateMinutes: undefined,
+    };
+    newItem.nameInput?.blur();
+    newItem.estimateInput?.blur();
+    const { item } = await trpc($page).item.get.query(id);
+    lane.Items.push(item);
+    communication().finish();
   };
-
-  export let lane: Lanes & { Items: (Items & { Logs: Logs[] })[] };
 </script>
 
 <div class="lane">
   <h2 class="title">
     {lane.name}
   </h2>
-  {#if lane.Items}
-    <slot />
+  {#if lane.Items && children}
+    {@render children()}
   {/if}
-  <form on:submit|preventDefault={createItem}>
-    <input type="text" name="name" required bind:value={newItemName} />
+  <form
+    onsubmit={event => {
+      event.preventDefault();
+      createItem();
+    }}
+  >
+    <div class="inputs">
+      <input
+        type="text"
+        name="name"
+        placeholder=""
+        required
+        bind:value={newItem.name}
+        bind:this={newItem.nameInput}
+      />
+      <input
+        type="number"
+        name="estimate"
+        placeholder="見積もり(分)"
+        bind:value={newItem.estimateMinutes}
+        bind:this={newItem.estimateInput}
+      />
+    </div>
     <input type="submit" value="追加" />
   </form>
 </div>
@@ -56,25 +107,42 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    display: flex;
     border-radius: 0 0 1ch 1ch;
     overflow: hidden;
-    height: 2em;
-    input[type='text'] {
-      outline: none;
-      border: none;
-      box-sizing: border-box;
-      margin: 0;
-      width: 100%;
-      padding: 0 1.5ch;
+
+    $base-height: 30px;
+    .inputs {
+      transform: translateY($base-height);
+      transition: transform 0.5s cubic-bezier(0.87, 0, 0.13, 1);
+      &:has(input:focus) {
+        transform: translateY(0);
+      }
+      input {
+        outline: none;
+        border: none;
+        box-sizing: border-box;
+        margin: 0;
+        width: 100%;
+        height: $base-height;
+        padding: 0 1.5ch;
+        &:last-child {
+          width: 70%;
+        }
+      }
     }
     input[type='submit'] {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      outline: none;
       border: none;
       box-sizing: border-box;
       background-color: #fd0;
       font-weight: bold;
       margin: 0;
-      width: 15ch;
+      max-width: 10ch;
+      width: 30%;
+      height: $base-height;
       color: #000;
     }
   }

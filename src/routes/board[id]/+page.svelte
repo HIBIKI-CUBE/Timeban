@@ -3,23 +3,28 @@
   import Card from '$lib/components/card.svelte';
   import type { PageData } from './$types';
   import { dndzone, type DndEvent } from 'svelte-dnd-action';
-  import { timers } from '$lib/timers';
   import Lane from '$lib/components/lane.svelte';
-  import { communicating } from '$lib/communicating';
+  import { communication, timer } from '$lib/globalStates.svelte';
   import PauseButton from '$lib/components/pauseButton.svelte';
-  import { paused } from '$lib/paused';
+  import { masterTimer } from '$lib/globalStates.svelte';
   import { page } from '$app/stores';
   import { trpc } from '$lib/trpc/client';
-  import { invalidateAll } from '$app/navigation';
-  import type { Items, Logs } from '@prisma/client';
+  import type { Lanes, Items, Logs } from '@prisma/client';
+  import TrashCanSolid from 'svelte-awesome-icons/TrashCanSolid.svelte';
 
-  export let data: PageData;
-  let { board } = data;
-  $: ({ board } = data);
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
+
+  let { board } = $state(data);
 
   const flipDurationMs = 250;
 
-  $paused = board?.paused ?? false;
+  board?.paused ? masterTimer().pause() : masterTimer().resume();
+
+  let dragging = $state(false);
 
   export const DndConsider = (
     e: CustomEvent<DndEvent<Items & { Logs: Logs[] }>>,
@@ -32,6 +37,7 @@
       !board?.Lanes[targetLaneIndex].Items
     )
       return;
+    dragging = true;
     board.Lanes[targetLaneIndex].Items = e.detail.items;
   };
   export const DndFinalize = async (
@@ -39,9 +45,10 @@
     laneId: number,
   ) => {
     const targetLaneIndex = board?.Lanes.findIndex(lane => lane.id === laneId);
-    if (targetLaneIndex === -1) return;
+    if (targetLaneIndex === undefined || targetLaneIndex === -1 || !board) return;
     board.Lanes[targetLaneIndex].Items = e.detail.items;
     if (e.detail.info.trigger === 'droppedIntoZone') {
+      dragging = false;
       await Promise.all(
         e.detail.items.map((item, i) => {
           if (
@@ -49,24 +56,13 @@
             (e.detail.items.length === 1 && e.detail.items[0].lane === laneId)
           )
             return; //When the item is not moved
-          // console.log(item, e.detail, targetLaneIndex, laneId);
           if (board?.Lanes[targetLaneIndex].runsTimer) {
-            if (!$timers[item.id]) {
-              $timers[item.id] = {
-                started_at: new Date(),
-                sessionOffset: 0,
-                duration: 0,
-              };
-            }
-            $timers[item.id].started_at = new Date();
+            timer(item.id).resumeOrCreate();
           } else {
-            if ($timers[item.id]) {
-              $timers[item.id].sessionOffset += $timers[item.id].duration;
-              $timers[item.id].duration = 0;
-            }
+            timer(item.id).pauseIfExists();
           }
-          $communicating = true;
 
+          communication().start();
           trpc($page)
             .item.update.mutate({
               itemId: item.id,
@@ -74,26 +70,39 @@
               row: i,
               runsTimer: board?.Lanes[targetLaneIndex].runsTimer,
             })
-            .then(() => {
-              $communicating = false;
-            });
+            .then(communication().finish);
           return;
         }),
       );
     }
   };
 
-  let newLaneName = '',
-    newLaneRunsTimer = false;
+  const DndDispose = async (e: CustomEvent<DndEvent<Items & { Logs: Logs[] }>>): Promise<void> => {
+    if (e.detail.info.trigger === 'droppedIntoZone') {
+      dragging = false;
+      communication().start();
+      await trpc($page).item.delete.mutate({
+        itemId: Number(e.detail.info.id),
+      });
+      communication().finish();
+    }
+  };
+
+  let newLaneName = $state(''),
+    newLaneRunsTimer = $state(false);
   const createLane = async () => {
-    await trpc($page).lane.create.mutate({
+    if (!board) return;
+    communication().start();
+    const { id } = await trpc($page).lane.create.mutate({
       name: newLaneName,
       runsTimer: newLaneRunsTimer,
       boardId: board.id,
     });
     newLaneName = '';
     newLaneRunsTimer = false;
-    invalidateAll();
+    const { lane } = await trpc($page).lane.get.query(id);
+    board.Lanes.push(lane);
+    communication().finish();
   };
 </script>
 
@@ -103,6 +112,20 @@
       <h1>
         {board?.name}
       </h1>
+      <div
+        class="disposer"
+        class:dragging
+        use:dndzone={{
+          items: board?.Lanes.flatMap(lane => lane.Items),
+          flipDurationMs,
+        }}
+        onconsider={() => {}}
+        onfinalize={e => {
+          DndDispose(e);
+        }}
+      >
+        <TrashCanSolid />
+      </div>
       <PauseButton
         items={board?.Lanes.filter(lane => lane.runsTimer)
           .map(lane => lane.Items)
@@ -117,10 +140,10 @@
             <div
               class="items"
               use:dndzone={{ items: lane.Items, flipDurationMs }}
-              on:consider={e => {
+              onconsider={e => {
                 DndConsider(e, lane.id);
               }}
-              on:finalize={e => {
+              onfinalize={e => {
                 DndFinalize(e, lane.id);
               }}
             >
@@ -137,7 +160,12 @@
   </div>
 {/if}
 
-<form on:submit|preventDefault={createLane}>
+<form
+  onsubmit={event => {
+    event.preventDefault();
+    createLane();
+  }}
+>
   <label for="name">レーンを作成</label>
   <input type="text" name="name" required bind:value={newLaneName} />
   <input type="checkbox" name="runsTimer" id="runsTimer" bind:checked={newLaneRunsTimer} />
@@ -157,8 +185,25 @@
     justify-content: space-between;
     align-items: center;
     padding: 1em 0;
+    gap: 1em;
     h1 {
       margin: 0;
+      flex-shrink: 0;
+    }
+  }
+  .disposer {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 2.5em;
+    background-color: #ccc;
+    border: dashed 2px #000;
+    box-sizing: border-box;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    border-radius: 1ch;
+    &.dragging {
+      opacity: 1;
     }
   }
   .lanes {

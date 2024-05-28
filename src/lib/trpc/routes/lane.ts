@@ -29,7 +29,7 @@ export const lane = api.router({
         .catch(() => {
           throw new TRPCError({ code: 'FORBIDDEN' });
         });
-      await prisma.lanes.create({
+      return await prisma.lanes.create({
         data: {
           name,
           board: board.id,
@@ -37,4 +37,20 @@ export const lane = api.router({
         },
       });
     }),
+  get: api.procedure.input(laneSchema.id).query(async ({ ctx: { event }, input }) => {
+    const owner = await getOwnerOrForbidden(event);
+    const lane = await prisma.lanes
+      .findUniqueOrThrow({
+        where: {
+          id: input,
+          Boards: {
+            owner,
+          },
+        },
+      })
+      .catch(() => {
+        throw new TRPCError({ code: 'FORBIDDEN' });
+      });
+    return { lane };
+  }),
 });
